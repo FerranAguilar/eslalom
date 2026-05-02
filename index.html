@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1B3A5C">
+<title>Eslálom</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f4f4f4;min-height:100vh;-webkit-tap-highlight-color:transparent}
+.screen{display:none;flex-direction:column;min-height:100vh}
+.screen.active{display:flex}
+.topbar{background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.12);padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10}
+.topbar h1{font-size:16px;font-weight:600;color:#111;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.back{font-size:22px;color:#666;background:none;border:none;cursor:pointer;padding:0 4px;line-height:1}
+.content{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px}
+input,select{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;background:#fff;color:#111;font-family:inherit;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{outline:none;border-color:#185FA5}
+label{font-size:12px;color:#666;margin-bottom:4px;display:block;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.card{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:16px}
+.btn{width:100%;padding:13px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:1px solid #ddd;background:#fff;color:#111;font-family:inherit;-webkit-appearance:none}
+.btn:active{transform:scale(.97);opacity:.9}
+.btn.primary{background:#185FA5;border-color:#185FA5;color:#fff}
+.btn.success{background:#0F6E56;border-color:#0F6E56;color:#fff}
+.btn.danger{background:#A32D2D;border-color:#A32D2D;color:#fff}
+.btn.ghost{background:none;border-color:transparent;color:#185FA5;padding:8px}
+.btn.sm{padding:8px 14px;font-size:13px;width:auto}
+.btn.outline-blue{border-color:#185FA5;color:#185FA5;background:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.tabs{display:flex;border-bottom:1px solid #eee;background:#fff}
+.tab{flex:1;padding:11px;font-size:13px;font-weight:600;color:#888;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;font-family:inherit}
+.tab.active{color:#185FA5;border-bottom-color:#185FA5}
+.feed-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid #f0f0f0}
+.feed-item:last-child{border-bottom:none}
+.feed-badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:100px;background:#E6F1FB;color:#0C447C;white-space:nowrap}
+.feed-del{background:none;border:none;cursor:pointer;color:#bbb;font-size:18px;padding:0 4px;flex-shrink:0}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1B3A5C;color:#fff;padding:10px 20px;border-radius:100px;font-size:14px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;z-index:99;white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+.toast.error{background:#A32D2D}
+.empty{text-align:center;padding:20px 0;color:#aaa;font-size:14px}
+.sl{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.divider{height:0.5px;background:#eee;margin:14px 0}
+.pal-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pal-num{width:26px;height:26px;border-radius:50%;background:#E6F1FB;color:#0C447C;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pal-row input{flex:1;padding:8px 10px;font-size:14px}
+.ctx-info{background:#f7f7f7;border-radius:8px;padding:8px 12px;font-size:13px;color:#666;text-align:center}
+.ctx-info strong{color:#111}
+.overwrite-warn{background:#FAEEDA;border:0.5px solid #FAC775;border-radius:8px;padding:8px 12px;font-size:12px;color:#633806;text-align:center;display:none}
+.overwrite-warn.show{display:block}
+/* Spinner */
+.spinner{width:20px;height:20px;border:2px solid #ddd;border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:12px;display:none}
+.loading-overlay.show{display:flex}
+.loading-overlay p{font-size:14px;color:#666}
+/* Auth */
+.auth-logo{font-size:40px;text-align:center;margin:16px 0 4px}
+.auth-title{font-size:22px;font-weight:700;text-align:center;color:#111;margin-bottom:4px}
+.auth-sub{font-size:14px;color:#888;text-align:center;margin-bottom:24px}
+.auth-toggle{text-align:center;font-size:14px;color:#888;margin-top:12px}
+.auth-toggle button{background:none;border:none;color:#185FA5;font-weight:600;cursor:pointer;font-size:14px;font-family:inherit}
+.input-group{margin-bottom:12px}
+/* Shared badge */
+.shared-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:100px;background:#E1F5EE;color:#085041;white-space:nowrap}
+.private-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:100px;background:#f0f0f0;color:#888;white-space:nowrap}
+/* Crono */
+.chrono-time{font-size:56px;font-weight:300;color:#111;text-align:center;letter-spacing:-2px;font-variant-numeric:tabular-nums;line-height:1}
+.chrono-pen{font-size:14px;font-weight:600;text-align:center;margin-top:4px;min-height:20px;color:#993556}
+.chrono-main-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:20px}
+.chrono-start{width:80px;height:80px;border-radius:50%;background:#1E6B3C;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.chrono-start.running{background:#A32D2D}
+.chrono-start.overwrite:not(.running){background:#C55A11}
+.chrono-start svg{width:32px;height:32px;fill:white}
+.chrono-aux{width:48px;height:48px;border-radius:50%;background:#f2f2f2;border:1px solid #ddd;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chrono-aux svg{width:20px;height:20px;fill:#666}
+.chrono-save{width:48px;height:48px;border-radius:50%;background:#E1F5EE;border:1px solid #9FE1CB;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0;pointer-events:none;transition:opacity .15s}
+.chrono-save.visible{opacity:1;pointer-events:auto}
+.chrono-save svg{width:20px;height:20px;fill:#085041}
+.clbl{font-size:10px;color:#aaa;text-align:center;margin-top:5px}
+.pen-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.pen-btn{height:44px;border-radius:8px;border:1px solid;cursor:pointer;font-family:inherit;font-weight:600;display:flex;align-items:center;justify-content:center;gap:5px;font-size:13px;width:100%}
+.pen-btn:active{transform:scale(.96)}
+.pen-btn.add2{border-color:#F5C4B3;background:#FAECE7;color:#993C1D}
+.pen-btn.add50{border-color:#F7C1C1;background:#FCEBEB;color:#A32D2D}
+.pen-btn.sub2{border-color:#C0DD97;background:#EAF3DE;color:#3B6D11}
+.pen-btn.sub50{border-color:#9FE1CB;background:#E1F5EE;color:#085041}
+.pen-section-lbl{font-size:11px;color:#aaa;text-align:center;margin-bottom:4px}
+/* Resumen */
+.res-pal-title{font-size:16px;font-weight:600;color:#111;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid #eee}
+.res-manga-block{margin-bottom:14px}
+.res-manga-label{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.res-tramo-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0 6px 10px;border-bottom:0.5px solid #f0f0f0}
+.res-tramo-row:last-child{border-bottom:none}
+.res-tramo-name{font-size:13px;color:#888}
+.res-tramo-val{font-size:13px;font-weight:600;color:#111}
+.res-tramo-val.best{color:#1E6B3C}
+.res-pen-row{display:flex;justify-content:space-between;padding:5px 10px 0;font-size:12px;color:#993C1D}
+.res-total-row{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#f7f7f7;border-radius:8px;margin-top:4px}
+.res-total-row span:first-child{font-size:13px;color:#888}
+.res-total-row span:last-child{font-size:14px;font-weight:600;color:#111}
+.teorica-box{border-radius:8px;padding:12px 14px;margin-top:4px}
+.teorica-box.real{background:#E1F5EE}
+.teorica-box.teorica{background:#E6F1FB}
+.teorica-box .lbl{font-size:12px;font-weight:600;margin-bottom:2px}
+.teorica-box .val{font-size:22px;font-weight:600}
+.teorica-box.real .lbl{color:#085041}.teorica-box.real .val{color:#0F6E56}
+.teorica-box.teorica .lbl{color:#0C447C}.teorica-box.teorica .val{color:#185FA5}
+.mejora-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;margin-top:4px}
+.mejora-row span:first-child{font-size:13px;color:#888}
+.mejora-row span:last-child{font-size:14px;font-weight:600;color:#A32D2D}
+/* Share toggle */
+.share-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;margin-top:4px}
+.share-row span{font-size:14px;color:#111}
+.toggle{width:44px;height:26px;border-radius:13px;background:#ddd;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:#185FA5}
+.toggle::after{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s}
+.toggle.on::after{left:21px}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <p id="loading-msg">Cargando...</p>
+</div>
+
+<!-- AUTH -->
+<div id="s-auth" class="screen active">
+  <div class="content" style="justify-content:center;max-width:420px;margin:0 auto;width:100%">
+    <div class="auth-logo">🛶</div>
+    <div class="auth-title">Eslálom</div>
+    <div class="auth-sub" id="auth-sub">Inicia sesión para continuar</div>
+    <div class="card">
+      <div class="input-group"><label>Email</label><input id="auth-email" type="email" placeholder="tu@email.com" autocomplete="email"></div>
+      <div class="input-group"><label>Contraseña</label><input id="auth-pass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+      <div class="input-group" id="auth-pass2-wrap" style="display:none"><label>Repite la contraseña</label><input id="auth-pass2" type="password" placeholder="••••••••"></div>
+      <button class="btn primary" id="auth-btn" onclick="doAuth()">Entrar</button>
+      <div class="auth-toggle">
+        <span id="auth-toggle-txt">¿No tienes cuenta?</span>
+        <button onclick="toggleAuthMode()">Regístrate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="s-home" class="screen">
+  <div class="topbar">
+    <h1>🛶 Eslálom</h1>
+    <button class="btn sm" onclick="goTo('s-hist')" style="width:auto">Historial</button>
+    <button class="btn sm" onclick="doLogout()" style="width:auto;color:#A32D2D;border-color:#A32D2D">Salir</button>
+  </div>
+  <div class="content" style="padding-bottom:24px">
+    <div class="card" style="background:#E6F1FB;border-color:#B5D4F4">
+      <div style="font-size:13px;color:#0C447C">Sesión iniciada como <strong id="user-email-display"></strong></div>
+    </div>
+    <div class="card">
+      <div class="sl">Sesión</div>
+      <div style="margin-bottom:10px"><label>Nombre de la sesión</label><input id="cfg-name" placeholder="Ej: Martes — Canal Sevilla"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label>Entrenador/a</label><input id="cfg-trainer" placeholder="Tu nombre"></div>
+        <div><label>Fecha</label><input id="cfg-date" type="date"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="sl">Estructura</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
+        <div><label>Nº de palistas</label><input id="cfg-pal" type="number" min="1" max="15" value="3" style="text-align:center" oninput="updatePalistaInputs()"></div>
+        <div><label>Nº de tramos</label><input id="cfg-tra" type="number" min="1" max="12" value="4" style="text-align:center"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="sl">Nombres de palistas</div>
+      <div id="palista-inputs"></div>
+      <div class="share-row">
+        <span>Compartir sesión con el equipo</span>
+        <button class="toggle" id="cfg-shared" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <button class="btn primary" style="margin-top:4px" onclick="startSession()">Comenzar sesión</button>
+    </div>
+  </div>
+</div>
+
+<!-- SESIÓN -->
+<div id="s-session" class="screen">
+  <div class="topbar">
+    <button class="back" onclick="confirmEnd()">&#8592;</button>
+    <h1 id="sess-title">Sesión</h1>
+    <button class="btn sm success" onclick="confirmEnd(true)" style="width:auto">Finalizar</button>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="tab-btn-0" onclick="switchTab(0)">Registro</button>
+    <button class="tab" id="tab-btn-1" onclick="switchTab(1)">Resumen</button>
+  </div>
+  <div id="tab-0" class="content" style="padding-bottom:24px">
+    <div class="card" style="padding:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+        <div><label>Palista</label><select id="sel-pal" onchange="onPalChange()"></select></div>
+        <div><label>Manga</label><select id="sel-man" onchange="onMangaChange()"></select></div>
+        <div><label>Tramo</label><select id="sel-tra" onchange="onTraChange()"></select></div>
+      </div>
+      <div class="overwrite-warn" id="overwrite-warn">⚠️ Esta manga ya tiene un tiempo. Se sobreescribirá.</div>
+      <div class="ctx-info" id="ctx-info" style="margin-top:8px">—</div>
+    </div>
+    <div class="card" style="padding:20px 16px 16px">
+      <div id="chrono-display" class="chrono-time">0.00</div>
+      <div id="chrono-pen-display" class="chrono-pen"></div>
+      <div class="chrono-main-row">
+        <div style="text-align:center">
+          <button class="chrono-aux" onclick="resetChrono()">
+            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+          </button>
+          <div class="clbl">Reset</div>
+        </div>
+        <div style="text-align:center">
+          <button class="chrono-start" id="chrono-btn" onclick="toggleChrono()">
+            <svg id="chrono-icon" viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+          </button>
+        </div>
+        <div style="text-align:center">
+          <button class="chrono-save" id="chrono-save-btn" onclick="saveChronoTime()">
+            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+          </button>
+          <div class="clbl" id="save-lbl" style="opacity:0">Guardar</div>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="pen-section-lbl">Penalización cronómetro</div>
+        <div class="pen-grid">
+          <button class="pen-btn add2" onclick="addPenaltyChrono(2)">＋2s toque</button>
+          <button class="pen-btn add50" onclick="addPenaltyChrono(50)">＋50s rehús</button>
+          <button class="pen-btn sub2" onclick="addPenaltyChrono(-2)">－2s toque</button>
+          <button class="pen-btn sub50" onclick="addPenaltyChrono(-50)">－50s rehús</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <label style="margin-bottom:8px">Tiempo manual (s)</label>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input id="manual-input" type="number" step="0.01" min="0" placeholder="14.32" style="font-size:18px;text-align:center">
+        <button class="btn primary" style="width:auto;padding:10px 18px" onclick="saveManualTime()">Añadir</button>
+      </div>
+      <div class="pen-section-lbl">Penalización manual</div>
+      <div class="pen-grid">
+        <button class="pen-btn add2" onclick="addPenaltyManual(2)">＋2s toque</button>
+        <button class="pen-btn add50" onclick="addPenaltyManual(50)">＋50s rehús</button>
+        <button class="pen-btn sub2" onclick="addPenaltyManual(-2)">－2s toque</button>
+        <button class="pen-btn sub50" onclick="addPenaltyManual(-50)">－50s rehús</button>
+      </div>
+      <div id="manual-pen-display" style="text-align:center;font-size:13px;font-weight:600;color:#993C1D;margin-top:6px;min-height:18px"></div>
+    </div>
+    <div class="card" style="padding:12px 16px">
+      <div class="sl">Últimos tiempos</div>
+      <div id="feed"></div>
+    </div>
+  </div>
+  <div id="tab-1" class="content" style="display:none;padding-bottom:24px"></div>
+</div>
+
+<!-- HISTORIAL -->
+<div id="s-hist" class="screen">
+  <div class="topbar">
+    <button class="back" onclick="goTo('s-home')">&#8592;</button>
+    <h1>Historial</h1>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="hist-tab-btn-0" onclick="switchHistTab(0)">Mis sesiones</button>
+    <button class="tab" id="hist-tab-btn-1" onclick="switchHistTab(1)">Compartidas</button>
+  </div>
+  <div id="hist-tab-0" class="content" id="hist-mine"></div>
+  <div id="hist-tab-1" class="content" style="display:none" id="hist-shared"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPA_URL = 'https://duwmhatcqxlwtqdnzhle.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1d21oYXRjcXhsd3RxZG56aGxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MzIwMDMsImV4cCI6MjA5MzMwODAwM30.CkvnBvuo8rS2cv1Uts6dmUATUMbW9Dgjg4L29HE9Wdo';
+
+// ── Supabase helpers ──────────────────────────────────────────────────────────
+let _token = null;
+let _userId = null;
+let _userEmail = null;
+
+async function sbFetch(path, opts = {}) {
+  const headers = {
+    'apikey': SUPA_KEY,
+    'Content-Type': 'application/json',
+    ...(opts.headers || {})
+  };
+  if (_token) headers['Authorization'] = 'Bearer ' + _token;
+  const res = await fetch(SUPA_URL + path, { ...opts, headers });
+  const text = await res.text();
+  let json;
+  try { json = JSON.parse(text); } catch { json = text; }
+  if (!res.ok) throw new Error(json?.message || json?.error_description || JSON.stringify(json));
+  return json;
+}
+
+async function sbAuthFetch(path, body) {
+  return sbFetch('/auth/v1' + path, {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+let S = { cur: null, chrono: { running: false, start: 0, elapsed: 0, penalty: 0, iv: null }, manualPen: 0, lastSaved: [] };
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function showLoading(msg = 'Cargando...') { $('loading-msg').textContent = msg; $('loading-overlay').classList.add('show'); }
+function hideLoading() { $('loading-overlay').classList.remove('show'); }
+
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+  if (id === 's-hist') loadHist();
+}
+
+function switchTab(t) {
+  [0, 1].forEach(i => {
+    $('tab-btn-' + i).classList.toggle('active', i === t);
+    $('tab-' + i).style.display = i === t ? 'flex' : 'none';
+  });
+  if (t === 1) renderResumen();
+}
+
+function switchHistTab(t) {
+  [0, 1].forEach(i => {
+    $('hist-tab-btn-' + i).classList.toggle('active', i === t);
+    $('hist-tab-' + i).style.display = i === t ? 'flex' : 'none';
+  });
+}
+
+let _toastTimer;
+function toast(msg, isError = false) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.toggle('error', isError);
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+let _authMode = 'login'; // 'login' | 'register'
+
+function toggleAuthMode() {
+  _authMode = _authMode === 'login' ? 'register' : 'login';
+  const isReg = _authMode === 'register';
+  $('auth-sub').textContent = isReg ? 'Crea tu cuenta' : 'Inicia sesión para continuar';
+  $('auth-btn').textContent = isReg ? 'Registrarse' : 'Entrar';
+  $('auth-toggle-txt').textContent = isReg ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
+  $('auth-pass2-wrap').style.display = isReg ? 'block' : 'none';
+  document.querySelector('.auth-toggle button').textContent = isReg ? 'Inicia sesión' : 'Regístrate';
+}
+
+async function doAuth() {
+  const email = $('auth-email').value.trim();
+  const pass = $('auth-pass').value;
+  if (!email || !pass) { toast('Rellena email y contraseña', true); return; }
+  if (_authMode === 'register') {
+    const pass2 = $('auth-pass2').value;
+    if (pass !== pass2) { toast('Las contraseñas no coinciden', true); return; }
+  }
+  showLoading(_authMode === 'login' ? 'Iniciando sesión...' : 'Creando cuenta...');
+  $('auth-btn').disabled = true;
+  try {
+    const endpoint = _authMode === 'login' ? '/token?grant_type=password' : '/signup';
+    const data = await sbAuthFetch(endpoint, { email, password: pass });
+    if (_authMode === 'register' && !data.access_token) {
+      hideLoading();
+      $('auth-btn').disabled = false;
+      toast('Cuenta creada. Revisa tu email para confirmarla, luego inicia sesión.', false);
+      toggleAuthMode();
+      return;
+    }
+    _token = data.access_token;
+    _userId = data.user?.id;
+    _userEmail = data.user?.email;
+    hideLoading();
+    onLoggedIn();
+  } catch (e) {
+    hideLoading();
+    $('auth-btn').disabled = false;
+    toast(e.message || 'Error de autenticación', true);
+  }
+}
+
+function onLoggedIn() {
+  $('user-email-display').textContent = _userEmail;
+  $('cfg-date').value = new Date().toISOString().slice(0, 10);
+  updatePalistaInputs();
+  goTo('s-home');
+}
+
+async function doLogout() {
+  try { await sbFetch('/auth/v1/logout', { method: 'POST' }); } catch {}
+  _token = null; _userId = null; _userEmail = null;
+  goTo('s-auth');
+}
+
+// ── Session config ────────────────────────────────────────────────────────────
+function updatePalistaInputs() {
+  const n = Math.min(15, Math.max(1, parseInt($('cfg-pal').value) || 1));
+  const cont = $('palista-inputs');
+  const prev = Array.from(cont.querySelectorAll('input')).map(i => i.value);
+  cont.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const row = document.createElement('div'); row.className = 'pal-row';
+    row.innerHTML = `<div class="pal-num">${i + 1}</div><input type="text" placeholder="Palista ${i + 1}" value="${prev[i] || ''}">`;
+    cont.appendChild(row);
+  }
+}
+
+function startSession() {
+  const nPal = Math.min(15, Math.max(1, parseInt($('cfg-pal').value) || 3));
+  const nTra = Math.min(12, Math.max(1, parseInt($('cfg-tra').value) || 4));
+  const nameInputs = $('palista-inputs').querySelectorAll('input');
+  const palNames = Array.from({ length: nPal }, (_, i) => nameInputs[i]?.value.trim() || 'Palista ' + (i + 1));
+  S.cur = {
+    id: Date.now(),
+    sessionName: $('cfg-name').value.trim() || 'Sesión ' + new Date().toLocaleDateString('es-ES'),
+    trainer: $('cfg-trainer').value.trim() || _userEmail,
+    date: $('cfg-date').value || new Date().toISOString().slice(0, 10),
+    nPal, nTra,
+    shared: $('cfg-shared').classList.contains('on'),
+    palistas: palNames.map(name => ({ name, currentManga: 0, mangas: [] }))
+  };
+  S.lastSaved = []; S.manualPen = 0;
+  $('sess-title').textContent = S.cur.sessionName;
+  buildSelectors(); renderFeed(); resetChrono();
+  goTo('s-session');
+}
+
+// ── Selectores ────────────────────────────────────────────────────────────────
+function buildSelectors() {
+  $('sel-pal').innerHTML = S.cur.palistas.map((p, i) => `<option value="${i}">${p.name}</option>`).join('');
+  $('sel-tra').innerHTML = Array.from({ length: S.cur.nTra }, (_, i) => `<option value="${i}">Tramo ${i + 1}</option>`).join('');
+  rebuildMangaSelector(); updateCtxInfo(); updateChronoBtn();
+}
+
+function rebuildMangaSelector() {
+  const pal = S.cur.palistas[getPalIdx()];
+  const nOpts = pal.currentManga + 1;
+  let html = '';
+  for (let i = 0; i < nOpts; i++) {
+    html += `<option value="${i}">${i < pal.mangas.length ? `Manga ${i + 1} ✓` : `Manga ${i + 1} (nueva)`}</option>`;
+  }
+  $('sel-man').innerHTML = html;
+  $('sel-man').value = pal.currentManga;
+}
+
+const getPalIdx = () => parseInt($('sel-pal').value);
+const getManIdx = () => parseInt($('sel-man').value);
+const getTraIdx = () => parseInt($('sel-tra').value);
+
+function onPalChange() { resetChrono(); rebuildMangaSelector(); updateCtxInfo(); updateChronoBtn(); }
+function onMangaChange() { resetChrono(); updateCtxInfo(); updateChronoBtn(); }
+function onTraChange() { updateCtxInfo(); updateChronoBtn(); }
+
+function willOverwrite() {
+  const pal = S.cur.palistas[getPalIdx()];
+  const mi = getManIdx(), ti = getTraIdx();
+  return !!(pal.mangas[mi] && pal.mangas[mi].times[ti] !== null);
+}
+
+function updateChronoBtn() {
+  const ow = willOverwrite();
+  $('overwrite-warn').classList.toggle('show', ow);
+  const btn = $('chrono-btn');
+  if (!S.chrono.running) { btn.classList.remove('running'); btn.classList.toggle('overwrite', ow); }
+}
+
+function updateCtxInfo() {
+  const pal = S.cur.palistas[getPalIdx()];
+  const mi = getManIdx(), ti = getTraIdx();
+  const existing = pal.mangas[mi]?.times[ti];
+  const existStr = (existing !== null && existing !== undefined) ? ` · Anterior: <strong>${existing.toFixed(2)}s</strong>` : '';
+  $('ctx-info').innerHTML = `<strong>${pal.name}</strong> · Manga ${mi + 1} · Tramo ${ti + 1}${existStr}`;
+}
+
+// ── Cronómetro ────────────────────────────────────────────────────────────────
+function toggleChrono() { S.chrono.running ? stopChrono() : startChrono(); }
+
+function startChrono() {
+  S.chrono.running = true;
+  S.chrono.start = Date.now() - S.chrono.elapsed;
+  S.chrono.iv = setInterval(() => { $('chrono-display').textContent = ((Date.now() - S.chrono.start) / 1000).toFixed(2); }, 33);
+  const btn = $('chrono-btn');
+  btn.classList.add('running'); btn.classList.remove('overwrite');
+  $('chrono-icon').innerHTML = '<rect x="5" y="4" width="4" height="16"/><rect x="15" y="4" width="4" height="16"/>';
+  $('chrono-save-btn').classList.remove('visible'); $('save-lbl').style.opacity = '0';
+}
+
+function stopChrono() {
+  if (!S.chrono.running) return;
+  clearInterval(S.chrono.iv); S.chrono.running = false;
+  S.chrono.elapsed = Date.now() - S.chrono.start;
+  const btn = $('chrono-btn');
+  btn.classList.remove('running'); btn.classList.toggle('overwrite', willOverwrite());
+  $('chrono-icon').innerHTML = '<polygon points="6,4 20,12 6,20"/>';
+  $('chrono-save-btn').classList.add('visible'); $('save-lbl').style.opacity = '1';
+}
+
+function resetChrono() {
+  clearInterval(S.chrono.iv);
+  S.chrono = { running: false, start: 0, elapsed: 0, penalty: 0, iv: null };
+  $('chrono-display').textContent = '0.00'; $('chrono-pen-display').textContent = '';
+  $('chrono-btn').classList.remove('running');
+  $('chrono-icon').innerHTML = '<polygon points="6,4 20,12 6,20"/>';
+  $('chrono-save-btn').classList.remove('visible'); $('save-lbl').style.opacity = '0';
+  updateChronoBtn();
+}
+
+function addPenaltyChrono(s) {
+  if (!S.chrono.running && S.chrono.elapsed === 0) { toast('Arranca el cronómetro primero'); return; }
+  S.chrono.penalty = Math.max(0, S.chrono.penalty + s);
+  $('chrono-pen-display').textContent = S.chrono.penalty > 0 ? '+' + S.chrono.penalty + 's penalización' : '';
+  toast((s > 0 ? '+' : '') + s + 's penalización');
+}
+
+function addPenaltyManual(s) {
+  S.manualPen = Math.max(0, S.manualPen + s);
+  $('manual-pen-display').textContent = S.manualPen > 0 ? '+' + S.manualPen + 's penalización' : '';
+  toast((s > 0 ? '+' : '') + s + 's penalización');
+}
+
+function saveChronoTime() {
+  const total = parseFloat(((S.chrono.elapsed / 1000) + S.chrono.penalty).toFixed(2));
+  recordTime(total, S.chrono.penalty); resetChrono();
+}
+
+function saveManualTime() {
+  const v = parseFloat($('manual-input').value);
+  if (isNaN(v) || v <= 0) { toast('Introduce un tiempo válido'); return; }
+  recordTime(parseFloat((v + S.manualPen).toFixed(2)), S.manualPen);
+  $('manual-input').value = ''; S.manualPen = 0; $('manual-pen-display').textContent = '';
+}
+
+function recordTime(t, pen) {
+  const pi = getPalIdx(), mi = getManIdx(), ti = getTraIdx();
+  const pal = S.cur.palistas[pi];
+  const isNew = mi >= pal.mangas.length;
+  if (!pal.mangas[mi]) pal.mangas[mi] = { times: Array(S.cur.nTra).fill(null), pen: 0 };
+  pal.mangas[mi].times[ti] = t;
+  if (pen) pal.mangas[mi].pen = (pal.mangas[mi].pen || 0) + pen;
+  if (mi >= pal.currentManga) pal.currentManga = mi + 1;
+  S.lastSaved.unshift({ pi, mi, ti, t, pen, pal: pal.name, overwrite: !isNew });
+  if (S.lastSaved.length > 20) S.lastSaved.pop();
+  rebuildMangaSelector(); $('sel-man').value = pal.currentManga; onMangaChange();
+  renderFeed(); updateCtxInfo();
+  toast(`${pal.name} · M${mi + 1} · T${ti + 1} → ${t.toFixed(2)}s`);
+}
+
+function deleteEntry(idx) {
+  const e = S.lastSaved[idx];
+  const pal = S.cur.palistas[e.pi];
+  if (pal.mangas[e.mi]) {
+    pal.mangas[e.mi].times[e.ti] = null;
+    if (e.pen) pal.mangas[e.mi].pen = Math.max(0, (pal.mangas[e.mi].pen || 0) - e.pen);
+  }
+  if (e.mi === pal.currentManga - 1) pal.currentManga = Math.max(0, pal.currentManga - 1);
+  S.lastSaved.splice(idx, 1);
+  rebuildMangaSelector(); renderFeed(); updateCtxInfo(); updateChronoBtn();
+}
+
+function renderFeed() {
+  const feed = $('feed');
+  if (!S.lastSaved.length) { feed.innerHTML = '<div class="empty">Sin tiempos registrados aún</div>'; return; }
+  feed.innerHTML = S.lastSaved.map((e, i) => `
+    <div class="feed-item">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="feed-badge">${e.pal}</div>
+          ${e.overwrite ? '<span style="font-size:10px;background:#FAEEDA;color:#633806;padding:2px 6px;border-radius:100px;font-weight:600">sobreescrito</span>' : ''}
+        </div>
+        <div style="font-size:12px;color:#888;margin-top:3px">
+          Manga ${e.mi + 1} · Tramo ${e.ti + 1}${e.pen ? ` · <span style="color:#993C1D">+${e.pen}s pen</span>` : ''}
+        </div>
+      </div>
+      <div style="font-size:20px;font-weight:600;min-width:64px;text-align:right;color:#111">${e.t.toFixed(2)}s</div>
+      <button class="feed-del" onclick="deleteEntry(${i})">&#10005;</button>
+    </div>`).join('');
+}
+
+// ── Resumen ───────────────────────────────────────────────────────────────────
+function renderResumen() {
+  const c = S.cur; const cont = $('tab-1'); cont.innerHTML = '';
+  c.palistas.forEach(pal => {
+    const card = document.createElement('div'); card.className = 'card'; card.style.marginBottom = '8px';
+    if (!pal.mangas.length) {
+      card.innerHTML = `<div class="res-pal-title">${pal.name}</div><div class="empty" style="padding:8px 0">Sin tiempos registrados</div>`;
+      cont.appendChild(card); return;
+    }
+    const bestPerTramo = Array.from({ length: c.nTra }, (_, ti) => {
+      let best = null, bestMi = null;
+      pal.mangas.forEach((m, mi) => { const v = m.times[ti]; if (v !== null && v > 0 && (best === null || v < best)) { best = v; bestMi = mi; } });
+      return { val: best, mi: bestMi };
+    });
+    const teoricaTramos = bestPerTramo.map(({ val, mi }) => {
+      if (val === null || mi === null) return null;
+      const m = pal.mangas[mi]; const n = m.times.filter(v => v !== null && v > 0).length || 1;
+      return { val, pen: (m.pen || 0) / n };
+    });
+    const teoricaTotal = teoricaTramos.every(t => t !== null) ? teoricaTramos.reduce((a, t) => a + t.val + t.pen, 0) : null;
+    const mangaNetos = pal.mangas.map(m => {
+      const v = m.times.filter(v => v !== null && v > 0);
+      if (v.length < c.nTra) return null;
+      return v.reduce((a, b) => a + b, 0) + (m.pen || 0);
+    });
+    const bestManga = mangaNetos.reduce((a, v) => v !== null && (a === null || v < a) ? v : a, null);
+    let mangasHTML = '';
+    pal.mangas.forEach((m, mi) => {
+      const tramosHTML = Array.from({ length: c.nTra }, (_, ti) => {
+        const v = m.times[ti]; const isBest = bestPerTramo[ti].mi === mi && v !== null;
+        return `<div class="res-tramo-row"><span class="res-tramo-name">Tramo ${ti + 1}</span><span class="res-tramo-val${isBest ? ' best' : ''}">${v !== null ? v.toFixed(2) + 's' : '—'}${isBest ? ' ★' : ''}</span></div>`;
+      }).join('');
+      const penStr = m.pen > 0 ? `<div class="res-pen-row"><span>Penalización</span><span>+${m.pen.toFixed(2)}s</span></div>` : '';
+      const net = mangaNetos[mi];
+      mangasHTML += `<div class="res-manga-block"><div class="res-manga-label">Manga ${mi + 1}</div>${tramosHTML}${penStr}<div class="res-total-row"><span>Total manga ${mi + 1}</span><span>${net !== null ? net.toFixed(2) + 's' : 'Incompleta'}</span></div></div>`;
+    });
+    let teoricaTramosHTML = '';
+    if (teoricaTramos.every(t => t !== null)) {
+      teoricaTramosHTML = teoricaTramos.map((t, ti) => `
+        <div class="res-tramo-row"><span class="res-tramo-name">Tramo ${ti + 1}</span>
+        <span class="res-tramo-val best">${t.val.toFixed(2)}s${t.pen > 0 ? ` <span style="font-size:11px;color:#993C1D;font-weight:400">(+${t.pen.toFixed(2)}s pen)</span>` : ''}</span></div>`).join('');
+    }
+    card.innerHTML = `
+      <div class="res-pal-title">${pal.name}</div>${mangasHTML}
+      <div class="divider"></div>
+      ${bestManga !== null ? `<div class="teorica-box real"><div class="lbl">Mejor manga real</div><div class="val">${bestManga.toFixed(2)}s</div></div>` : ''}
+      ${teoricaTotal !== null ? `<div style="margin-top:6px"><div class="sl" style="margin-bottom:6px">Mejor teórica ★</div>${teoricaTramosHTML}<div class="teorica-box teorica" style="margin-top:6px"><div class="lbl">Total mejor teórica</div><div class="val">${teoricaTotal.toFixed(2)}s</div></div></div>` : ''}
+      ${bestManga !== null && teoricaTotal !== null ? `<div class="mejora-row"><span>Margen de mejora</span><span>+${(bestManga - teoricaTotal).toFixed(2)}s</span></div>` : ''}`;
+    cont.appendChild(card);
+  });
+}
+
+// ── Finalizar y guardar en Supabase ───────────────────────────────────────────
+async function confirmEnd(finish = false) {
+  if (!confirm(finish ? '¿Finalizar y guardar la sesión?' : '¿Salir? Se perderán los datos no guardados.')) return;
+  if (finish) {
+    showLoading('Guardando sesión...');
+    try {
+      await sbFetch('/rest/v1/sessions', {
+        method: 'POST',
+        headers: { 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          user_id: _userId,
+          data: S.cur,
+          shared: S.cur.shared || false
+        })
+      });
+      buildCSV(S.cur);
+      toast('Sesión guardada en la nube ☁️');
+    } catch (e) {
+      toast('Error al guardar: ' + e.message, true);
+    }
+    hideLoading();
+  }
+  resetChrono(); goTo('s-home');
+}
+
+// ── Historial desde Supabase ──────────────────────────────────────────────────
+async function loadHist() {
+  showLoading('Cargando historial...');
+  try {
+    const mine = await sbFetch('/rest/v1/sessions?user_id=eq.' + _userId + '&order=created_at.desc&select=*');
+    const shared = await sbFetch('/rest/v1/sessions?shared=eq.true&user_id=neq.' + _userId + '&order=created_at.desc&select=*');
+    hideLoading();
+    renderHistList(mine, $('hist-tab-0'), false);
+    renderHistList(shared, $('hist-tab-1'), true);
+  } catch (e) {
+    hideLoading();
+    toast('Error al cargar historial', true);
+  }
+}
+
+function renderHistList(rows, cont, isShared) {
+  cont.innerHTML = '';
+  if (!rows.length) { cont.innerHTML = '<div class="empty">' + (isShared ? 'No hay sesiones compartidas.' : 'No hay sesiones guardadas.') + '</div>'; return; }
+  rows.forEach(row => {
+    const sess = row.data;
+    const maxMan = Math.max(...sess.palistas.map(p => p.mangas.length), 0);
+    const d = document.createElement('div');
+    d.style.cssText = 'background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:14px 16px;margin-bottom:8px';
+    d.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <div style="font-size:15px;font-weight:600;color:#111;flex:1">${sess.sessionName}</div>
+        ${sess.shared ? '<span class="shared-badge">Compartida</span>' : '<span class="private-badge">Privada</span>'}
+      </div>
+      <div style="font-size:13px;color:#888;margin-bottom:4px">${sess.date} · ${sess.trainer}</div>
+      <div style="font-size:13px;color:#888;margin-bottom:10px">${sess.palistas.map(p => p.name).join(', ')} · ${maxMan} manga${maxMan !== 1 ? 's' : ''}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm outline-blue" onclick='buildCSV(${JSON.stringify(sess)})'>Exportar CSV</button>
+        ${!isShared ? `<button class="btn sm" onclick="toggleShared('${row.id}', ${!sess.shared}, this)">${sess.shared ? 'Hacer privada' : 'Compartir'}</button>` : ''}
+        ${!isShared ? `<button class="btn sm danger" onclick="deleteSess('${row.id}', this)">Borrar</button>` : ''}
+      </div>`;
+    cont.appendChild(d);
+  });
+}
+
+async function toggleShared(id, newVal, btn) {
+  btn.disabled = true;
+  try {
+    await sbFetch('/rest/v1/sessions?id=eq.' + id, {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ shared: newVal })
+    });
+    toast(newVal ? 'Sesión compartida con el equipo' : 'Sesión marcada como privada');
+    loadHist();
+  } catch (e) {
+    toast('Error: ' + e.message, true);
+    btn.disabled = false;
+  }
+}
+
+async function deleteSess(id, btn) {
+  if (!confirm('¿Borrar esta sesión? No se puede deshacer.')) return;
+  btn.disabled = true;
+  try {
+    await sbFetch('/rest/v1/sessions?id=eq.' + id, { method: 'DELETE' });
+    toast('Sesión borrada');
+    loadHist();
+  } catch (e) {
+    toast('Error: ' + e.message, true);
+    btn.disabled = false;
+  }
+}
+
+// ── Export CSV ────────────────────────────────────────────────────────────────
+function buildCSV(sess) {
+  const rows = [];
+  rows.push(['Sesión:', sess.sessionName, 'Fecha:', sess.date, 'Entrenador/a:', sess.trainer]); rows.push([]);
+  sess.palistas.forEach(pal => {
+    const nMan = pal.mangas.length;
+    rows.push([pal.name]);
+    rows.push(['Tramo', ...Array.from({ length: nMan }, (_, i) => 'Manga ' + (i + 1)), 'Mejor tramo']);
+    for (let ti = 0; ti < sess.nTra; ti++) {
+      const row = ['T' + (ti + 1)]; let best = null;
+      for (let mi = 0; mi < nMan; mi++) { const v = pal.mangas[mi]?.times[ti] ?? null; row.push(v !== null ? v : ''); if (v !== null && (best === null || v < best)) best = v; }
+      row.push(best !== null ? best.toFixed(2) : ''); rows.push(row);
+    }
+    rows.push(['Penalización', ...pal.mangas.map(m => m.pen || 0), '']);
+    rows.push(['Total bruto', ...pal.mangas.map((_, mi) => { const ts = pal.mangas[mi].times.filter(v => v !== null); return ts.length === sess.nTra ? ts.reduce((a, b) => a + b, 0).toFixed(2) : ''; }), '']);
+    rows.push(['Tiempo neto', ...pal.mangas.map((_, mi) => { const ts = pal.mangas[mi].times.filter(v => v !== null); if (ts.length !== sess.nTra) return ''; return (ts.reduce((a, b) => a + b, 0) + (pal.mangas[mi].pen || 0)).toFixed(2); }), '']);
+    const bt = Array.from({ length: sess.nTra }, (_, ti) => { const vals = pal.mangas.map(m => m.times[ti]).filter(v => v !== null); return vals.length ? Math.min(...vals) : null; });
+    rows.push(['Mejor teórica', '', '', '', '', bt.every(v => v !== null) ? bt.reduce((a, b) => a + b, 0).toFixed(2) : '']);
+    rows.push([]);
+  });
+  const bom = '\uFEFF';
+  const csv = rows.map(r => r.map(c => { const s = String(c ?? ''); return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([bom + csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `eslalom_${sess.date}_${(sess.sessionName || 'sesion').replace(/\s/g, '_')}.csv`;
+  a.click();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+$('cfg-date').value = new Date().toISOString().slice(0, 10);
+updatePalistaInputs();
+
+// Enter key en auth
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && $('s-auth').classList.contains('active')) doAuth();
+});
+</script>
+</body>
+</html>
