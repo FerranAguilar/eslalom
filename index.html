@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1B3A5C">
+<title>Eslálom</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f4f4f4;min-height:100vh;-webkit-tap-highlight-color:transparent}
+.screen{display:none;flex-direction:column;min-height:100vh}
+.screen.active{display:flex}
+.topbar{background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.12);padding:12px 16px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:10}
+.topbar h1{font-size:16px;font-weight:600;color:#111;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.back{font-size:22px;color:#666;background:none;border:none;cursor:pointer;padding:0 4px;line-height:1}
+.content{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px;padding-bottom:24px}
+input,select{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;background:#fff;color:#111;font-family:inherit;-webkit-appearance:none}
+input:focus,select:focus{outline:none;border-color:#185FA5}
+label{font-size:12px;color:#666;margin-bottom:4px;display:block;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.card{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:16px}
+.btn{width:100%;padding:13px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:1px solid #ddd;background:#fff;color:#111;font-family:inherit}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:#185FA5;border-color:#185FA5;color:#fff}
+.btn.success{background:#0F6E56;border-color:#0F6E56;color:#fff}
+.btn.danger{background:#A32D2D;border-color:#A32D2D;color:#fff}
+.btn.sm{padding:8px 14px;font-size:13px;width:auto}
+.btn.outline-blue{border-color:#185FA5;color:#185FA5;background:#fff}
+.btn.outline-green{border-color:#0F6E56;color:#0F6E56;background:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.tabs{display:flex;border-bottom:1px solid #eee;background:#fff}
+.tab{flex:1;padding:11px;font-size:13px;font-weight:600;color:#888;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;font-family:inherit}
+.tab.active{color:#185FA5;border-bottom-color:#185FA5}
+.feed-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:0.5px solid #f0f0f0}
+.feed-item:last-child{border-bottom:none}
+.feed-badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:100px;background:#E6F1FB;color:#0C447C;white-space:nowrap}
+.feed-who{font-size:10px;font-weight:600;padding:2px 6px;border-radius:100px;background:#f0f0f0;color:#666;white-space:nowrap}
+.feed-del{background:none;border:none;cursor:pointer;color:#bbb;font-size:18px;padding:0 4px;flex-shrink:0}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1B3A5C;color:#fff;padding:10px 20px;border-radius:100px;font-size:14px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;z-index:99;white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+.toast.err{background:#A32D2D}
+.empty{text-align:center;padding:20px 0;color:#aaa;font-size:14px}
+.sl{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.divider{height:0.5px;background:#eee;margin:14px 0}
+.pal-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pal-num{width:26px;height:26px;border-radius:50%;background:#E6F1FB;color:#0C447C;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pal-row input{flex:1;padding:8px 10px;font-size:14px}
+.ctx-info{background:#f7f7f7;border-radius:8px;padding:8px 12px;font-size:13px;color:#666;text-align:center}
+.ctx-info strong{color:#111}
+.overwrite-warn{background:#FAEEDA;border:0.5px solid #FAC775;border-radius:8px;padding:8px 12px;font-size:12px;color:#633806;text-align:center;display:none}
+.overwrite-warn.show{display:block}
+/* Spinner/Loading */
+.spinner{width:22px;height:22px;border:2px solid #ddd;border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.overlay{position:fixed;inset:0;background:rgba(255,255,255,.88);display:none;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:12px}
+.overlay.show{display:flex}
+.overlay p{font-size:14px;color:#666;margin-top:4px}
+/* Auth */
+.auth-logo{font-size:44px;text-align:center;margin:8px 0 2px}
+.auth-title{font-size:24px;font-weight:700;text-align:center;color:#111;margin-bottom:4px}
+.auth-sub{font-size:14px;color:#888;text-align:center;margin-bottom:20px}
+.auth-toggle{text-align:center;font-size:14px;color:#888;margin-top:12px}
+.auth-toggle button{background:none;border:none;color:#185FA5;font-weight:600;cursor:pointer;font-size:14px;font-family:inherit}
+.ig{margin-bottom:12px}
+/* Room code */
+.room-code{font-size:40px;font-weight:700;letter-spacing:8px;text-align:center;color:#185FA5;padding:12px 0;font-variant-numeric:tabular-nums}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#1E6B3C;display:inline-block;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.trainer-chip{display:inline-flex;align-items:center;gap:4px;background:#f0f0f0;border-radius:100px;padding:4px 10px;font-size:12px;font-weight:600;color:#444;margin:2px}
+/* Crono */
+.chrono-time{font-size:56px;font-weight:300;color:#111;text-align:center;letter-spacing:-2px;font-variant-numeric:tabular-nums;line-height:1}
+.chrono-pen{font-size:14px;font-weight:600;text-align:center;margin-top:4px;min-height:20px;color:#993556}
+.chrono-main-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:20px}
+.c-start{width:80px;height:80px;border-radius:50%;background:#1E6B3C;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.c-start.running{background:#A32D2D}
+.c-start.overwrite:not(.running){background:#C55A11}
+.c-start svg{width:32px;height:32px;fill:white}
+.c-aux{width:48px;height:48px;border-radius:50%;background:#f2f2f2;border:1px solid #ddd;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.c-aux svg{width:20px;height:20px;fill:#666}
+.c-save{width:48px;height:48px;border-radius:50%;background:#E1F5EE;border:1px solid #9FE1CB;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0;pointer-events:none;transition:opacity .15s}
+.c-save.visible{opacity:1;pointer-events:auto}
+.c-save svg{width:20px;height:20px;fill:#085041}
+.clbl{font-size:10px;color:#aaa;text-align:center;margin-top:5px}
+.pen-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.pen-btn{height:44px;border-radius:8px;border:1px solid;cursor:pointer;font-family:inherit;font-weight:600;display:flex;align-items:center;justify-content:center;gap:5px;font-size:13px;width:100%}
+.pen-btn:active{transform:scale(.96)}
+.pen-btn.a2{border-color:#F5C4B3;background:#FAECE7;color:#993C1D}
+.pen-btn.a50{border-color:#F7C1C1;background:#FCEBEB;color:#A32D2D}
+.pen-btn.s2{border-color:#C0DD97;background:#EAF3DE;color:#3B6D11}
+.pen-btn.s50{border-color:#9FE1CB;background:#E1F5EE;color:#085041}
+.psl{font-size:11px;color:#aaa;text-align:center;margin-bottom:4px}
+/* Resumen */
+.rpt{font-size:16px;font-weight:600;color:#111;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid #eee}
+.rmb{margin-bottom:14px}
+.rml{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.rtr{display:flex;justify-content:space-between;align-items:center;padding:6px 0 6px 10px;border-bottom:0.5px solid #f0f0f0}
+.rtr:last-child{border-bottom:none}
+.rtn{font-size:13px;color:#888}
+.rtv{font-size:13px;font-weight:600;color:#111}
+.rtv.best{color:#1E6B3C}
+.rpr{display:flex;justify-content:space-between;padding:5px 10px 0;font-size:12px;color:#993C1D}
+.rto{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#f7f7f7;border-radius:8px;margin-top:4px}
+.rto span:first-child{font-size:13px;color:#888}
+.rto span:last-child{font-size:14px;font-weight:600;color:#111}
+.tbox{border-radius:8px;padding:12px 14px;margin-top:4px}
+.tbox.real{background:#E1F5EE}
+.tbox.teo{background:#E6F1FB}
+.tbox .tl{font-size:12px;font-weight:600;margin-bottom:2px}
+.tbox .tv{font-size:22px;font-weight:600}
+.tbox.real .tl{color:#085041}.tbox.real .tv{color:#0F6E56}
+.tbox.teo .tl{color:#0C447C}.tbox.teo .tv{color:#185FA5}
+.mr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;margin-top:4px}
+.mr span:first-child{font-size:13px;color:#888}
+.mr span:last-child{font-size:14px;font-weight:600;color:#A32D2D}
+.toggle{width:44px;height:26px;border-radius:13px;background:#ddd;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:#185FA5}
+.toggle::after{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s}
+.toggle.on::after{left:21px}
+.share-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0}
+.share-row span{font-size:14px;color:#111}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay"><div class="spinner"></div><p id="overlay-msg">Cargando...</p></div>
+
+<!-- AUTH -->
+
+<div id="s-auth" class="screen active">
+  <div class="content" style="justify-content:center;max-width:420px;margin:0 auto;width:100%">
+    <div class="auth-logo">🛶</div>
+    <div class="auth-title">Eslálom</div>
+    <div class="auth-sub" id="auth-sub">Inicia sesión para continuar</div>
+    <div class="card">
+      <div class="ig"><label>Email</label><input id="auth-email" type="email" placeholder="tu@email.com" autocomplete="email"></div>
+      <div class="ig"><label>Contraseña</label><input id="auth-pass" type="password" placeholder="••••••••"></div>
+      <div class="ig" id="auth-p2w" style="display:none"><label>Repite la contraseña</label><input id="auth-pass2" type="password" placeholder="••••••••"></div>
+      <button class="btn primary" id="auth-btn" onclick="doAuth()">Entrar</button>
+      <div class="auth-toggle">
+        <span id="auth-ttxt">¿No tienes cuenta?</span>
+        <button onclick="toggleAuthMode()">Regístrate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOME -->
+
+<div id="s-home" class="screen">
+  <div class="topbar">
+    <h1>🛶 Eslálom</h1>
+    <button class="btn sm" onclick="goTo('s-hist')" style="width:auto">Historial</button>
+    <button class="btn sm" onclick="doLogout()" style="width:auto;color:#A32D2D;border-color:#A32D2D">Salir</button>
+  </div>
+  <div class="content">
+    <div class="card" style="background:#E6F1FB;border-color:#B5D4F4;padding:10px 14px">
+      <div style="font-size:13px;color:#0C447C">Sesión iniciada como <strong id="u-email"></strong></div>
+    </div>
+
+```
+<!-- Crear sesión -->
+<div class="card">
+  <div class="sl">Nueva sesión</div>
+  <div style="margin-bottom:10px"><label>Nombre</label><input id="cfg-name" placeholder="Ej: Martes — Canal Sevilla"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+    <div><label>Entrenador/a</label><input id="cfg-trainer" placeholder="Tu nombre"></div>
+    <div><label>Fecha</label><input id="cfg-date" type="date"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="sl">Estructura</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
+    <div><label>Nº palistas</label><input id="cfg-pal" type="number" min="1" max="15" value="3" style="text-align:center" oninput="updatePalInputs()"></div>
+    <div><label>Nº tramos</label><input id="cfg-tra" type="number" min="1" max="12" value="4" style="text-align:center"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="sl">Nombres de palistas</div>
+  <div id="pal-inputs"></div>
+  <div class="share-row">
+    <span>Sesión colaborativa (varios entrenadores)</span>
+    <button class="toggle" id="cfg-collab" onclick="this.classList.toggle('on')"></button>
+  </div>
+  <button class="btn primary" onclick="createSession()">Crear sesión</button>
+</div>
+
+<!-- Unirse a sesión -->
+<div class="card">
+  <div class="sl">Unirse a una sesión</div>
+  <div style="margin-bottom:10px"><label>Código de sesión</label>
+    <input id="join-code" placeholder="Ej: AB12CD" style="text-align:center;font-size:20px;font-weight:700;letter-spacing:4px;text-transform:uppercase">
+  </div>
+  <button class="btn outline-green" onclick="joinSession()">Unirse</button>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- SESIÓN -->
+
+<div id="s-session" class="screen">
+  <div class="topbar">
+    <button class="back" onclick="confirmEnd()">&#8592;</button>
+    <h1 id="sess-title">Sesión</h1>
+    <button class="btn sm success" onclick="confirmEnd(true)" style="width:auto">Finalizar</button>
+  </div>
+  <!-- Info sala colaborativa -->
+  <div id="collab-bar" style="display:none;background:#E1F5EE;border-bottom:0.5px solid #9FE1CB;padding:8px 16px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span class="live-dot"></span>
+      <span style="font-size:12px;font-weight:600;color:#085041">Sesión en vivo · Código: </span>
+      <span id="collab-code" style="font-size:14px;font-weight:700;color:#0F6E56;letter-spacing:2px"></span>
+      <button onclick="copyCode()" style="background:none;border:none;cursor:pointer;font-size:12px;color:#185FA5;font-weight:600;padding:0">Copiar</button>
+    </div>
+    <div id="trainers-online" style="font-size:12px;color:#085041"></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="tb0" onclick="switchTab(0)">Registro</button>
+    <button class="tab" id="tb1" onclick="switchTab(1)">Resumen</button>
+  </div>
+
+  <div id="tab-0" class="content">
+    <div class="card" style="padding:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+        <div><label>Palista</label><select id="sel-pal" onchange="onPalChange()"></select></div>
+        <div><label>Manga</label><select id="sel-man" onchange="onManChange()"></select></div>
+        <div><label>Tramo</label><select id="sel-tra" onchange="onTraChange()"></select></div>
+      </div>
+      <div class="overwrite-warn" id="ow-warn">⚠️ Esta manga ya tiene un tiempo. Se sobreescribirá.</div>
+      <div class="ctx-info" id="ctx-info" style="margin-top:8px">—</div>
+    </div>
+
+```
+<div class="card" style="padding:20px 16px 16px">
+  <div id="c-display" class="chrono-time">0.00</div>
+  <div id="c-pen" class="chrono-pen"></div>
+  <div class="chrono-main-row">
+    <div style="text-align:center">
+      <button class="c-aux" onclick="resetChrono()">
+        <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+      </button>
+      <div class="clbl">Reset</div>
+    </div>
+    <div style="text-align:center">
+      <button class="c-start" id="c-btn" onclick="toggleChrono()">
+        <svg id="c-icon" viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+      </button>
+    </div>
+    <div style="text-align:center">
+      <button class="c-save" id="c-save" onclick="saveChronoTime()">
+        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+      </button>
+      <div class="clbl" id="save-lbl" style="opacity:0">Guardar</div>
+    </div>
+  </div>
+  <div style="margin-top:14px">
+    <div class="psl">Penalización cronómetro</div>
+    <div class="pen-grid">
+      <button class="pen-btn a2"  onclick="addPC(2)">＋2s toque</button>
+      <button class="pen-btn a50" onclick="addPC(50)">＋50s rehús</button>
+      <button class="pen-btn s2"  onclick="addPC(-2)">－2s toque</button>
+      <button class="pen-btn s50" onclick="addPC(-50)">－50s rehús</button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <label style="margin-bottom:8px">Tiempo manual (s)</label>
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <input id="m-input" type="number" step="0.01" min="0" placeholder="14.32" style="font-size:18px;text-align:center">
+    <button class="btn primary" style="width:auto;padding:10px 18px" onclick="saveManual()">Añadir</button>
+  </div>
+  <div class="psl">Penalización manual</div>
+  <div class="pen-grid">
+    <button class="pen-btn a2"  onclick="addPM(2)">＋2s toque</button>
+    <button class="pen-btn a50" onclick="addPM(50)">＋50s rehús</button>
+    <button class="pen-btn s2"  onclick="addPM(-2)">－2s toque</button>
+    <button class="pen-btn s50" onclick="addPM(-50)">－50s rehús</button>
+  </div>
+  <div id="m-pen" style="text-align:center;font-size:13px;font-weight:600;color:#993C1D;margin-top:6px;min-height:18px"></div>
+</div>
+
+<div class="card" style="padding:12px 16px">
+  <div class="sl">Últimos tiempos</div>
+  <div id="feed"></div>
+</div>
+```
+
+  </div>
+
+  <div id="tab-1" class="content" style="display:none"></div>
+</div>
+
+<!-- HISTORIAL -->
+
+<div id="s-hist" class="screen">
+  <div class="topbar"><button class="back" onclick="goTo('s-home')">&#8592;</button><h1>Historial</h1></div>
+  <div class="tabs">
+    <button class="tab active" id="htb0" onclick="switchHistTab(0)">Mis sesiones</button>
+    <button class="tab" id="htb1" onclick="switchHistTab(1)">Compartidas</button>
+  </div>
+  <div id="ht0" class="content"></div>
+  <div id="ht1" class="content" style="display:none"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB = 'https://duwmhatcqxlwtqdnzhle.supabase.co';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1d21oYXRjcXhsd3RxZG56aGxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MzIwMDMsImV4cCI6MjA5MzMwODAwM30.CkvnBvuo8rS2cv1Uts6dmUATUMbW9Dgjg4L29HE9Wdo';
+
+let _tok=null, _uid=null, _email=null;
+let _sessId=null, _sessData=null, _isCollab=false, _roomCode=null;
+let _realtimeCh=null;
+let _chrono={running:false,start:0,elapsed:0,penalty:0,iv:null};
+let _manPen=0, _feed=[];
+
+const $=id=>document.getElementById(id);
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(path, opts={}){
+  const h={'apikey':KEY,'Content-Type':'application/json',...(opts.headers||{})};
+  if(_tok) h['Authorization']='Bearer '+_tok;
+  const r=await fetch(SB+path,{...opts,headers:h});
+  const t=await r.text();
+  let j; try{j=JSON.parse(t);}catch{j=t;}
+  if(!r.ok) throw new Error(j?.message||j?.error_description||JSON.stringify(j));
+  return j;
+}
+
+// ── UI ────────────────────────────────────────────────────────────────────────
+function showLoad(msg='Cargando...'){$('overlay-msg').textContent=msg;$('overlay').classList.add('show');}
+function hideLoad(){$('overlay').classList.remove('show');}
+
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+  if(id==='s-hist') loadHist();
+}
+
+function switchTab(t){
+  [0,1].forEach(i=>{$('tb'+i).classList.toggle('active',i===t);$('tab-'+i).style.display=i===t?'flex':'none';});
+  if(t===1) renderResumen();
+}
+
+function switchHistTab(t){
+  [0,1].forEach(i=>{$('htb'+i).classList.toggle('active',i===t);$('ht'+i).style.display=i===t?'flex':'none';});
+}
+
+let _tTimer;
+function toast(msg,err=false){
+  const el=$('toast');el.textContent=msg;
+  el.classList.toggle('err',err);el.classList.add('show');
+  clearTimeout(_tTimer);_tTimer=setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+let _mode='login';
+function toggleAuthMode(){
+  _mode=_mode==='login'?'register':'login';
+  const r=_mode==='register';
+  $('auth-sub').textContent=r?'Crea tu cuenta':'Inicia sesión para continuar';
+  $('auth-btn').textContent=r?'Registrarse':'Entrar';
+  $('auth-ttxt').textContent=r?'¿Ya tienes cuenta?':'¿No tienes cuenta?';
+  $('auth-p2w').style.display=r?'block':'none';
+  document.querySelector('.auth-toggle button').textContent=r?'Inicia sesión':'Regístrate';
+}
+
+async function doAuth(){
+  const email=$('auth-email').value.trim(), pass=$('auth-pass').value;
+  if(!email||!pass){toast('Rellena email y contraseña',true);return;}
+  if(_mode==='register'&&$('auth-pass2').value!==pass){toast('Las contraseñas no coinciden',true);return;}
+  showLoad(_mode==='login'?'Iniciando sesión...':'Creando cuenta...');
+  $('auth-btn').disabled=true;
+  try{
+    const ep=_mode==='login'?'/token?grant_type=password':'/signup';
+    const d=await api('/auth/v1'+ep,{method:'POST',body:JSON.stringify({email,password:pass})});
+    if(_mode==='register'&&!d.access_token){
+      hideLoad();$('auth-btn').disabled=false;
+      toast('Cuenta creada. Revisa tu email y luego inicia sesión.');
+      toggleAuthMode();return;
+    }
+    _tok=d.access_token;_uid=d.user?.id;_email=d.user?.email;
+    hideLoad();onLoggedIn();
+  }catch(e){hideLoad();$('auth-btn').disabled=false;toast(e.message,true);}
+}
+
+function onLoggedIn(){
+  $('u-email').textContent=_email;
+  $('cfg-date').value=new Date().toISOString().slice(0,10);
+  updatePalInputs();goTo('s-home');
+}
+
+async function doLogout(){
+  try{await api('/auth/v1/logout',{method:'POST'});}catch{}
+  _tok=null;_uid=null;_email=null;
+  leaveRealtime();goTo('s-auth');
+}
+
+// ── Palista inputs ────────────────────────────────────────────────────────────
+function updatePalInputs(){
+  const n=Math.min(15,Math.max(1,parseInt($('cfg-pal').value)||1));
+  const cont=$('pal-inputs');
+  const prev=Array.from(cont.querySelectorAll('input')).map(i=>i.value);
+  cont.innerHTML='';
+  for(let i=0;i<n;i++){
+    const row=document.createElement('div');row.className='pal-row';
+    row.innerHTML=`<div class="pal-num">${i+1}</div><input type="text" placeholder="Palista ${i+1}" value="${prev[i]||''}">`;
+    cont.appendChild(row);
+  }
+}
+
+// ── Código de sala ────────────────────────────────────────────────────────────
+function genCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+function copyCode(){
+  navigator.clipboard?.writeText(_roomCode).then(()=>toast('Código copiado: '+_roomCode));
+}
+
+// ── Crear sesión ──────────────────────────────────────────────────────────────
+async function createSession(){
+  const nPal=Math.min(15,Math.max(1,parseInt($('cfg-pal').value)||3));
+  const nTra=Math.min(12,Math.max(1,parseInt($('cfg-tra').value)||4));
+  const nameInputs=$('pal-inputs').querySelectorAll('input');
+  const palNames=Array.from({length:nPal},(_,i)=>nameInputs[i]?.value.trim()||'Palista '+(i+1));
+  const isCollab=$('cfg-collab').classList.contains('on');
+  const code=isCollab?genCode():null;
+
+  const sessData={
+    sessionName:$('cfg-name').value.trim()||'Sesión '+new Date().toLocaleDateString('es-ES'),
+    trainer:$('cfg-trainer').value.trim()||_email,
+    date:$('cfg-date').value||new Date().toISOString().slice(0,10),
+    nPal,nTra,
+    palistas:palNames.map(name=>({name,currentManga:0,mangas:[]}))
+  };
+
+  showLoad('Creando sesión...');
+  try{
+    const rows=await api('/rest/v1/sessions',{
+      method:'POST',
+      headers:{'Prefer':'return=representation'},
+      body:JSON.stringify({user_id:_uid,data:sessData,shared:isCollab,room_code:code,is_live:isCollab})
+    });
+    _sessId=rows[0].id;
+    _sessData=sessData;
+    _isCollab=isCollab;
+    _roomCode=code;
+    hideLoad();
+    startSessionUI();
+  }catch(e){hideLoad();toast('Error: '+e.message,true);}
+}
+
+// ── Unirse a sesión por código ────────────────────────────────────────────────
+async function joinSession(){
+  const code=$('join-code').value.trim().toUpperCase();
+  if(code.length<4){toast('Introduce un código válido',true);return;}
+  showLoad('Buscando sesión...');
+  try{
+    const rows=await api('/rest/v1/sessions?room_code=eq.'+code+'&is_live=eq.true&select=*');
+    if(!rows.length){hideLoad();toast('Sesión no encontrada o ya cerrada',true);return;}
+    const row=rows[0];
+    _sessId=row.id;
+    _sessData=row.data;
+    _isCollab=true;
+    _roomCode=row.room_code;
+    hideLoad();
+    startSessionUI();
+  }catch(e){hideLoad();toast('Error: '+e.message,true);}
+}
+
+// ── Iniciar UI de sesión ──────────────────────────────────────────────────────
+function startSessionUI(){
+  _feed=[];_manPen=0;
+  $('sess-title').textContent=_sessData.sessionName;
+
+  // Barra colaborativa
+  if(_isCollab&&_roomCode){
+    $('collab-bar').style.display='block';
+    $('collab-code').textContent=_roomCode;
+    subscribeRealtime();
+  } else {
+    $('collab-bar').style.display='none';
+  }
+
+  buildSelectors();renderFeed();resetChrono();
+  goTo('s-session');
+}
+
+// ── Realtime Supabase ─────────────────────────────────────────────────────────
+function subscribeRealtime(){
+  leaveRealtime();
+
+  // Usamos polling cada 3s como fallback robusto (Realtime websocket requiere la librería JS completa)
+  // Cargamos la librería de Supabase para tener Realtime real
+  loadSupabaseLib().then(()=>{
+    const {createClient}=window.supabase;
+    const sb=createClient(SB,KEY,{global:{headers:{Authorization:'Bearer '+_tok}}});
+
+    _realtimeCh=sb.channel('session-'+_sessId)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'live_times',filter:'session_id=eq.'+_sessId},
+        payload=>onRemoteTime(payload.new))
+      .on('postgres_changes',{event:'DELETE',schema:'public',table:'live_times',filter:'session_id=eq.'+_sessId},
+        ()=>refreshFromDB())
+      .subscribe();
+
+    // También escuchar cambios en la sesión (ej: palistas añadidos)
+    sb.channel('session-data-'+_sessId)
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'sessions',filter:'id=eq.'+_sessId},
+        payload=>{ _sessData=payload.new.data; rebuildSelectors(); })
+      .subscribe();
+
+    updateTrainersBar();
+    setInterval(updateTrainersBar,15000);
+  });
+}
+
+function loadSupabaseLib(){
+  return new Promise(resolve=>{
+    if(window.supabase){resolve();return;}
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+    s.onload=resolve;
+    document.head.appendChild(s);
+  });
+}
+
+function leaveRealtime(){
+  if(_realtimeCh){try{_realtimeCh.unsubscribe();}catch{}  _realtimeCh=null;}
+}
+
+async function updateTrainersBar(){
+  // Obtener emails únicos que han añadido tiempos en esta sesión
+  try{
+    const rows=await api('/rest/v1/live_times?session_id=eq.'+_sessId+'&select=trainer_email');
+    const emails=[...new Set(rows.map(r=>r.trainer_email).filter(Boolean))];
+    if(!emails.includes(_email)) emails.unshift(_email);
+    $('trainers-online').innerHTML='Entrenadores: '+emails.map(e=>`<span class="trainer-chip">${e.split('@')[0]}</span>`).join('');
+  }catch{}
+}
+
+function onRemoteTime(row){
+  if(row.user_id===_uid) return; // ya lo tenemos local
+  // Aplicar al estado local
+  const pal=_sessData.palistas[row.palista_idx];
+  if(!pal) return;
+  const mi=row.manga_idx, ti=row.tramo_idx;
+  if(!pal.mangas[mi]) pal.mangas[mi]={times:Array(_sessData.nTra).fill(null),pen:0};
+  pal.mangas[mi].times[ti]=row.time_value;
+  if(row.penalty) pal.mangas[mi].pen=(pal.mangas[mi].pen||0)+row.penalty;
+  if(mi>=pal.currentManga) pal.currentManga=mi+1;
+
+  // Añadir al feed como entrada remota
+  _feed.unshift({pi:row.palista_idx,mi,ti,t:row.time_value,pen:row.penalty,pal:pal.name,remote:true,who:row.trainer_email?.split('@')[0]||'?',dbId:row.id});
+  if(_feed.length>30) _feed.pop();
+  renderFeed();
+  rebuildMangaSelector();
+  toast(`📡 ${pal.name} · M${mi+1} · T${ti+1} → ${row.time_value.toFixed(2)}s`);
+}
+
+async function refreshFromDB(){
+  if(!_sessId) return;
+  try{
+    const rows=await api('/rest/v1/live_times?session_id=eq.'+_sessId+'&order=created_at.asc');
+    // Reconstruir estado desde DB
+    const palistas=_sessData.palistas.map(p=>({...p,currentManga:0,mangas:[]}));
+    rows.forEach(r=>{
+      const pal=palistas[r.palista_idx]; if(!pal) return;
+      const mi=r.manga_idx, ti=r.tramo_idx;
+      if(!pal.mangas[mi]) pal.mangas[mi]={times:Array(_sessData.nTra).fill(null),pen:0};
+      pal.mangas[mi].times[ti]=r.time_value;
+      if(r.penalty) pal.mangas[mi].pen=(pal.mangas[mi].pen||0)+r.penalty;
+      if(mi>=pal.currentManga) pal.currentManga=mi+1;
+    });
+    _sessData.palistas=palistas;
+    renderFeed();rebuildSelectors();
+  }catch{}
+}
+
+// ── Selectores ────────────────────────────────────────────────────────────────
+function buildSelectors(){
+  $('sel-pal').innerHTML=_sessData.palistas.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
+  $('sel-tra').innerHTML=Array.from({length:_sessData.nTra},(_,i)=>`<option value="${i}">Tramo ${i+1}</option>`).join('');
+  rebuildMangaSelector();updateCtxInfo();updateBtn();
+}
+
+function rebuildSelectors(){
+  const pi=getPi();
+  $('sel-pal').innerHTML=_sessData.palistas.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
+  $('sel-pal').value=pi;
+  rebuildMangaSelector();updateCtxInfo();
+}
+
+function rebuildMangaSelector(){
+  const pal=_sessData.palistas[getPi()];
+  const n=pal.currentManga+1; let html='';
+  for(let i=0;i<n;i++) html+=`<option value="${i}">${i<pal.mangas.length?`Manga ${i+1} ✓`:`Manga ${i+1} (nueva)`}</option>`;
+  $('sel-man').innerHTML=html;
+  $('sel-man').value=pal.currentManga;
+}
+
+const getPi=()=>parseInt($('sel-pal').value);
+const getMi=()=>parseInt($('sel-man').value);
+const getTi=()=>parseInt($('sel-tra').value);
+
+function onPalChange(){resetChrono();rebuildMangaSelector();updateCtxInfo();updateBtn();}
+function onManChange(){resetChrono();updateCtxInfo();updateBtn();}
+function onTraChange(){updateCtxInfo();updateBtn();}
+
+function willOW(){
+  const pal=_sessData.palistas[getPi()];
+  const mi=getMi(),ti=getTi();
+  return !!(pal.mangas[mi]&&pal.mangas[mi].times[ti]!==null);
+}
+
+function updateBtn(){
+  const ow=willOW();
+  $('ow-warn').classList.toggle('show',ow);
+  const btn=$('c-btn');
+  if(!_chrono.running){btn.classList.remove('running');btn.classList.toggle('overwrite',ow);}
+}
+
+function updateCtxInfo(){
+  const pal=_sessData.palistas[getPi()];
+  const mi=getMi(),ti=getTi();
+  const ex=pal.mangas[mi]?.times[ti];
+  const exS=(ex!==null&&ex!==undefined)?` · Anterior: <strong>${ex.toFixed(2)}s</strong>`:'';
+  $('ctx-info').innerHTML=`<strong>${pal.name}</strong> · Manga ${mi+1} · Tramo ${ti+1}${exS}`;
+}
+
+// ── Cronómetro ────────────────────────────────────────────────────────────────
+function toggleChrono(){_chrono.running?stopChrono():startChrono();}
+
+function startChrono(){
+  _chrono.running=true;_chrono.start=Date.now()-_chrono.elapsed;
+  _chrono.iv=setInterval(()=>{$('c-display').textContent=(((Date.now()-_chrono.start)/1000)).toFixed(2);},33);
+  const b=$('c-btn');b.classList.add('running');b.classList.remove('overwrite');
+  $('c-icon').innerHTML='<rect x="5" y="4" width="4" height="16"/><rect x="15" y="4" width="4" height="16"/>';
+  $('c-save').classList.remove('visible');$('save-lbl').style.opacity='0';
+}
+
+function stopChrono(){
+  if(!_chrono.running) return;
+  clearInterval(_chrono.iv);_chrono.running=false;_chrono.elapsed=Date.now()-_chrono.start;
+  const b=$('c-btn');b.classList.remove('running');b.classList.toggle('overwrite',willOW());
+  $('c-icon').innerHTML='<polygon points="6,4 20,12 6,20"/>';
+  $('c-save').classList.add('visible');$('save-lbl').style.opacity='1';
+}
+
+function resetChrono(){
+  clearInterval(_chrono.iv);_chrono={running:false,start:0,elapsed:0,penalty:0,iv:null};
+  $('c-display').textContent='0.00';$('c-pen').textContent='';
+  $('c-btn').classList.remove('running');
+  $('c-icon').innerHTML='<polygon points="6,4 20,12 6,20"/>';
+  $('c-save').classList.remove('visible');$('save-lbl').style.opacity='0';
+  updateBtn();
+}
+
+function addPC(s){
+  if(!_chrono.running&&_chrono.elapsed===0){toast('Arranca el cronómetro primero');return;}
+  _chrono.penalty=Math.max(0,_chrono.penalty+s);
+  $('c-pen').textContent=_chrono.penalty>0?'+'+_chrono.penalty+'s penalización':'';
+  toast((s>0?'+':'')+s+'s');
+}
+
+function addPM(s){
+  _manPen=Math.max(0,_manPen+s);
+  $('m-pen').textContent=_manPen>0?'+'+_manPen+'s penalización':'';
+  toast((s>0?'+':'')+s+'s');
+}
+
+function saveChronoTime(){
+  const total=parseFloat(((_chrono.elapsed/1000)+_chrono.penalty).toFixed(2));
+  recordTime(total,_chrono.penalty);resetChrono();
+}
+
+function saveManual(){
+  const v=parseFloat($('m-input').value);
+  if(isNaN(v)||v<=0){toast('Introduce un tiempo válido');return;}
+  recordTime(parseFloat((v+_manPen).toFixed(2)),_manPen);
+  $('m-input').value='';_manPen=0;$('m-pen').textContent='';
+}
+
+async function recordTime(t,pen){
+  const pi=getPi(),mi=getMi(),ti=getTi();
+  const pal=_sessData.palistas[pi];
+  const isNew=mi>=pal.mangas.length;
+  if(!pal.mangas[mi]) pal.mangas[mi]={times:Array(_sessData.nTra).fill(null),pen:0};
+  pal.mangas[mi].times[ti]=t;
+  if(pen) pal.mangas[mi].pen=(pal.mangas[mi].pen||0)+pen;
+  if(mi>=pal.currentManga) pal.currentManga=mi+1;
+
+  let dbId=null;
+  if(_isCollab&&_sessId){
+    // Guardar en live_times para que otros lo reciban en tiempo real
+    try{
+      const rows=await api('/rest/v1/live_times',{
+        method:'POST',
+        headers:{'Prefer':'return=representation'},
+        body:JSON.stringify({session_id:_sessId,user_id:_uid,trainer_email:_email,palista_idx:pi,manga_idx:mi,tramo_idx:ti,time_value:t,penalty:pen||0})
+      });
+      dbId=rows[0]?.id;
+    }catch(e){toast('Sin conexión, tiempo guardado localmente',true);}
+  }
+
+  _feed.unshift({pi,mi,ti,t,pen,pal:pal.name,overwrite:!isNew,remote:false,who:'Tú',dbId});
+  if(_feed.length>30) _feed.pop();
+  rebuildMangaSelector();$('sel-man').value=pal.currentManga;onManChange();
+  renderFeed();updateCtxInfo();
+  toast(`${pal.name} · M${mi+1} · T${ti+1} → ${t.toFixed(2)}s`);
+}
+
+async function deleteEntry(idx){
+  const e=_feed[idx];
+  const pal=_sessData.palistas[e.pi];
+  if(pal.mangas[e.mi]){
+    pal.mangas[e.mi].times[e.ti]=null;
+    if(e.pen) pal.mangas[e.mi].pen=Math.max(0,(pal.mangas[e.mi].pen||0)-e.pen);
+  }
+  if(e.mi===pal.currentManga-1) pal.currentManga=Math.max(0,pal.currentManga-1);
+
+  if(_isCollab&&e.dbId&&!e.remote){
+    try{await api('/rest/v1/live_times?id=eq.'+e.dbId,{method:'DELETE'});}catch{}
+  }
+  _feed.splice(idx,1);
+  rebuildMangaSelector();renderFeed();updateCtxInfo();updateBtn();
+}
+
+function renderFeed(){
+  const feed=$('feed');
+  if(!_feed.length){feed.innerHTML='<div class="empty">Sin tiempos registrados aún</div>';return;}
+  feed.innerHTML=_feed.map((e,i)=>`
+    <div class="feed-item">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          <div class="feed-badge">${e.pal}</div>
+          ${e.remote?`<span class="feed-who">📡 ${e.who}</span>`:''}
+          ${e.overwrite&&!e.remote?'<span style="font-size:10px;background:#FAEEDA;color:#633806;padding:2px 6px;border-radius:100px;font-weight:600">sobreescrito</span>':''}
+        </div>
+        <div style="font-size:12px;color:#888;margin-top:3px">
+          Manga ${e.mi+1} · Tramo ${e.ti+1}${e.pen?` · <span style="color:#993C1D">+${e.pen}s pen</span>`:''}
+        </div>
+      </div>
+      <div style="font-size:20px;font-weight:600;min-width:60px;text-align:right;color:#111">${e.t.toFixed(2)}s</div>
+      ${!e.remote?`<button class="feed-del" onclick="deleteEntry(${i})">&#10005;</button>`:'<div style="width:28px"></div>'}
+    </div>`).join('');
+}
+
+// ── Resumen ───────────────────────────────────────────────────────────────────
+function renderResumen(){
+  const c=_sessData; const cont=$('tab-1'); cont.innerHTML='';
+  c.palistas.forEach(pal=>{
+    const card=document.createElement('div');card.className='card';card.style.marginBottom='8px';
+    if(!pal.mangas.length){
+      card.innerHTML=`<div class="rpt">${pal.name}</div><div class="empty" style="padding:8px 0">Sin tiempos</div>`;
+      cont.appendChild(card);return;
+    }
+    const bpt=Array.from({length:c.nTra},(_,ti)=>{
+      let best=null,bmi=null;
+      pal.mangas.forEach((m,mi)=>{const v=m.times[ti];if(v!==null&&v>0&&(best===null||v<best)){best=v;bmi=mi;}});
+      return {val:best,mi:bmi};
+    });
+    const tt=bpt.map(({val,mi})=>{
+      if(val===null||mi===null) return null;
+      const m=pal.mangas[mi];const n=m.times.filter(v=>v!==null&&v>0).length||1;
+      return {val,pen:(m.pen||0)/n};
+    });
+    const ttot=tt.every(t=>t!==null)?tt.reduce((a,t)=>a+t.val+t.pen,0):null;
+    const mn=pal.mangas.map(m=>{
+      const v=m.times.filter(v=>v!==null&&v>0);
+      if(v.length<c.nTra) return null;
+      return v.reduce((a,b)=>a+b,0)+(m.pen||0);
+    });
+    const bm=mn.reduce((a,v)=>v!==null&&(a===null||v<a)?v:a,null);
+    let mh='';
+    pal.mangas.forEach((m,mi)=>{
+      const th=Array.from({length:c.nTra},(_,ti)=>{
+        const v=m.times[ti];const ib=bpt[ti].mi===mi&&v!==null;
+        return `<div class="rtr"><span class="rtn">Tramo ${ti+1}</span><span class="rtv${ib?' best':''}">${v!==null?v.toFixed(2)+'s':'—'}${ib?' ★':''}</span></div>`;
+      }).join('');
+      const ps=m.pen>0?`<div class="rpr"><span>Penalización</span><span>+${m.pen.toFixed(2)}s</span></div>`:'';
+      const net=mn[mi];
+      mh+=`<div class="rmb"><div class="rml">Manga ${mi+1}</div>${th}${ps}<div class="rto"><span>Total manga ${mi+1}</span><span>${net!==null?net.toFixed(2)+'s':'Incompleta'}</span></div></div>`;
+    });
+    let tth='';
+    if(tt.every(t=>t!==null)){
+      tth=tt.map((t,ti)=>`<div class="rtr"><span class="rtn">Tramo ${ti+1}</span><span class="rtv best">${t.val.toFixed(2)}s${t.pen>0?` <span style="font-size:11px;color:#993C1D;font-weight:400">(+${t.pen.toFixed(2)}s pen)</span>`:''}</span></div>`).join('');
+    }
+    card.innerHTML=`<div class="rpt">${pal.name}</div>${mh}<div class="divider"></div>
+      ${bm!==null?`<div class="tbox real"><div class="tl">Mejor manga real</div><div class="tv">${bm.toFixed(2)}s</div></div>`:''}
+      ${ttot!==null?`<div style="margin-top:6px"><div class="sl" style="margin-bottom:6px">Mejor teórica ★</div>${tth}<div class="tbox teo" style="margin-top:6px"><div class="tl">Total mejor teórica</div><div class="tv">${ttot.toFixed(2)}s</div></div></div>`:''}
+      ${bm!==null&&ttot!==null?`<div class="mr"><span>Margen de mejora</span><span>+${(bm-ttot).toFixed(2)}s</span></div>`:''}`;
+    cont.appendChild(card);
+  });
+}
+
+// ── Finalizar ─────────────────────────────────────────────────────────────────
+async function confirmEnd(finish=false){
+  if(!confirm(finish?'¿Finalizar y guardar la sesión?':'¿Salir? Se perderán los datos locales no guardados.')) return;
+  if(finish){
+    showLoad('Guardando...');
+    try{
+      if(_sessId){
+        // Actualizar sesión existente con datos finales
+        await api('/rest/v1/sessions?id=eq.'+_sessId,{
+          method:'PATCH',
+          headers:{'Prefer':'return=minimal'},
+          body:JSON.stringify({data:_sessData,is_live:false,shared:true})
+        });
+      } else {
+        await api('/rest/v1/sessions',{
+          method:'POST',
+          headers:{'Prefer':'return=minimal'},
+          body:JSON.stringify({user_id:_uid,data:_sessData,shared:false,is_live:false})
+        });
+      }
+      buildCSV(_sessData);
+      toast('Sesión guardada ☁️');
+    }catch(e){toast('Error al guardar: '+e.message,true);}
+    hideLoad();
+  }
+  leaveRealtime();resetChrono();
+  _sessId=null;_sessData=null;_isCollab=false;_roomCode=null;
+  goTo('s-home');
+}
+
+// ── Historial ─────────────────────────────────────────────────────────────────
+async function loadHist(){
+  showLoad('Cargando...');
+  try{
+    const mine=await api('/rest/v1/sessions?user_id=eq.'+_uid+'&is_live=eq.false&order=created_at.desc');
+    const shared=await api('/rest/v1/sessions?shared=eq.true&user_id=neq.'+_uid+'&is_live=eq.false&order=created_at.desc');
+    hideLoad();
+    renderHistList(mine,$('ht0'),false);
+    renderHistList(shared,$('ht1'),true);
+  }catch(e){hideLoad();toast('Error',true);}
+}
+
+function renderHistList(rows,cont,isShared){
+  cont.innerHTML='';
+  if(!rows.length){cont.innerHTML=`<div class="empty">${isShared?'No hay sesiones compartidas.':'No hay sesiones guardadas.'}</div>`;return;}
+  rows.forEach(row=>{
+    const sess=row.data;
+    const maxMan=Math.max(...sess.palistas.map(p=>p.mangas.length),0);
+    const d=document.createElement('div');
+    d.style.cssText='background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:14px 16px;margin-bottom:8px';
+    d.innerHTML=`
+      <div style="font-size:15px;font-weight:600;color:#111;margin-bottom:2px">${sess.sessionName}</div>
+      <div style="font-size:13px;color:#888;margin-bottom:4px">${sess.date} · ${sess.trainer}</div>
+      <div style="font-size:13px;color:#888;margin-bottom:10px">${sess.palistas.map(p=>p.name).join(', ')} · ${maxMan} manga${maxMan!==1?'s':''}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm outline-blue" onclick='buildCSV(${JSON.stringify(sess)})'>Exportar CSV</button>
+        ${!isShared?`<button class="btn sm danger" onclick="delSess('${row.id}',this)">Borrar</button>`:''}
+      </div>`;
+    cont.appendChild(d);
+  });
+}
+
+async function delSess(id,btn){
+  if(!confirm('¿Borrar esta sesión?')) return;
+  btn.disabled=true;
+  try{await api('/rest/v1/sessions?id=eq.'+id,{method:'DELETE'});toast('Borrada');loadHist();}
+  catch(e){toast('Error',true);btn.disabled=false;}
+}
+
+// ── Export CSV ────────────────────────────────────────────────────────────────
+function buildCSV(sess){
+  const rows=[];
+  rows.push(['Sesión:',sess.sessionName,'Fecha:',sess.date,'Entrenador/a:',sess.trainer]);rows.push([]);
+  sess.palistas.forEach(pal=>{
+    const nMan=pal.mangas.length;
+    rows.push([pal.name]);
+    rows.push(['Tramo',...Array.from({length:nMan},(_,i)=>'Manga '+(i+1)),'Mejor tramo']);
+    for(let ti=0;ti<sess.nTra;ti++){
+      const row=['T'+(ti+1)];let best=null;
+      for(let mi=0;mi<nMan;mi++){const v=pal.mangas[mi]?.times[ti]??null;row.push(v!==null?v:'');if(v!==null&&(best===null||v<best))best=v;}
+      row.push(best!==null?best.toFixed(2):'');rows.push(row);
+    }
+    rows.push(['Penalización',...pal.mangas.map(m=>m.pen||0),'']);
+    rows.push(['Total bruto',...pal.mangas.map((_,mi)=>{const ts=pal.mangas[mi].times.filter(v=>v!==null);return ts.length===sess.nTra?ts.reduce((a,b)=>a+b,0).toFixed(2):'';}),'']);
+    rows.push(['Tiempo neto',...pal.mangas.map((_,mi)=>{const ts=pal.mangas[mi].times.filter(v=>v!==null);if(ts.length!==sess.nTra)return '';return(ts.reduce((a,b)=>a+b,0)+(pal.mangas[mi].pen||0)).toFixed(2);}),'']);
+    const bt=Array.from({length:sess.nTra},(_,ti)=>{const vals=pal.mangas.map(m=>m.times[ti]).filter(v=>v!==null);return vals.length?Math.min(...vals):null;});
+    rows.push(['Mejor teórica','','','','',bt.every(v=>v!==null)?bt.reduce((a,b)=>a+b,0).toFixed(2):'']);
+    rows.push([]);
+  });
+  const bom='\uFEFF';
+  const csv=rows.map(r=>r.map(c=>{const s=String(c??'');return s.includes(',')||s.includes('"')?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([bom+csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`eslalom_${sess.date}_${(sess.sessionName||'sesion').replace(/\s/g,'_')}.csv`;
+  a.click();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+$('cfg-date').value=new Date().toISOString().slice(0,10);
+updatePalInputs();
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('s-auth').classList.contains('active'))doAuth();});
+</script>
+
+</body>
+</html>
