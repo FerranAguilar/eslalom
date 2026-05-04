@@ -894,7 +894,7 @@ function renderHistList(rows,cont,isShared){
   if(!rows.length){cont.innerHTML=`<div class="empty">${isShared?'No hay sesiones compartidas.':'No hay sesiones guardadas.'}</div>`;return;}
   rows.forEach(row=>{
     const sess=row.data;
-    const maxMan=Math.max(...sess.palistas.map(p=>p.mangas.length),0);
+    const maxMan=Math.max(...sess.palistas.map(p=>Math.max(...p.tramos.map(t=>t.mangas.filter(m=>m!==null&&m!==undefined).length),0)),0);
     const d=document.createElement('div');
     d.style.cssText='background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:14px 16px;margin-bottom:8px';
     d.innerHTML=`
@@ -919,25 +919,45 @@ async function delSess(id,btn){
 // ── Export CSV ────────────────────────────────────────────────────────────────
 function buildCSV(sess){
   const rows=[];
-  rows.push(['Sesión:',sess.sessionName,'Fecha:',sess.date,'Entrenador/a:',sess.trainer]);rows.push([]);
+  rows.push(['Sesión:',sess.sessionName,'Fecha:',sess.date,'Entrenador/a:',sess.trainer]);
+  rows.push([]);
+
   sess.palistas.forEach(pal=>{
-    const nMan=pal.mangas.length;
+    // Calcular el número máximo de mangas en cualquier tramo
+    const nMan=Math.max(...pal.tramos.map(t=>t.mangas.length),0);
+    if(nMan===0) return;
+
     rows.push([pal.name]);
-    rows.push(['Tramo',...Array.from({length:nMan},(_,i)=>'Manga '+(i+1)),'Mejor tramo']);
-    for(let ti=0;ti<sess.nTra;ti++){
-      const row=['T'+(ti+1)];let best=null;
-      for(let mi=0;mi<nMan;mi++){const v=pal.mangas[mi]?.times[ti]??null;row.push(v!==null?v:'');if(v!==null&&(best===null||v<best))best=v;}
-      row.push(best!==null?best.toFixed(2):'');rows.push(row);
-    }
-    rows.push(['Penalización',...pal.mangas.map(m=>m.pen||0),'']);
-    rows.push(['Total bruto',...pal.mangas.map((_,mi)=>{const ts=pal.mangas[mi].times.filter(v=>v!==null);return ts.length===sess.nTra?ts.reduce((a,b)=>a+b,0).toFixed(2):'';}),'']);
-    rows.push(['Tiempo neto',...pal.mangas.map((_,mi)=>{const ts=pal.mangas[mi].times.filter(v=>v!==null);if(ts.length!==sess.nTra)return '';return(ts.reduce((a,b)=>a+b,0)+(pal.mangas[mi].pen||0)).toFixed(2);}),'']);
-    const bt=Array.from({length:sess.nTra},(_,ti)=>{const vals=pal.mangas.map(m=>m.times[ti]).filter(v=>v!==null);return vals.length?Math.min(...vals):null;});
-    rows.push(['Mejor teórica','','','','',bt.every(v=>v!==null)?bt.reduce((a,b)=>a+b,0).toFixed(2):'']);
+    // Cabecera: Tramo | Manga 1 | Manga 2 | ...
+    rows.push(['Tramo',...Array.from({length:nMan},(_,mi)=>'Manga '+(mi+1))]);
+
+    // Una fila por tramo
+    pal.tramos.forEach((tra,ti)=>{
+      const row=['T'+(ti+1)];
+      for(let mi=0;mi<nMan;mi++){
+        const val=tra.mangas[mi];
+        const pen=tra.pens?.[mi]||0;
+        if(val===null||val===undefined){
+          row.push('');
+        } else if(val==='DNF'){
+          row.push('DNF');
+        } else {
+          const total=val+(pen||0);
+          row.push(total.toFixed(2));
+        }
+      }
+      rows.push(row);
+    });
+
     rows.push([]);
   });
+
   const bom='\uFEFF';
-  const csv=rows.map(r=>r.map(c=>{const s=String(c??'');return s.includes(',')||s.includes('"')?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');
+  const csv=rows.map(r=>r.map(cel=>{
+    const s=String(cel??'');
+    return s.includes(',')||s.includes('"')?'"'+s.replace(/"/g,'""')+'"':s;
+  }).join(',')).join('\r\n');
+
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([bom+csv],{type:'text/csv;charset=utf-8'}));
   a.download=`eslalom_${sess.date}_${(sess.sessionName||'sesion').replace(/\s/g,'_')}.csv`;
