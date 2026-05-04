@@ -12,7 +12,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f4f4f4;min-height:100vh;-webkit-tap-highlight-color:transparent}
 .screen{display:none;flex-direction:column;min-height:100vh}
 .screen.active{display:flex}
-.topbar{background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.12);padding:8px 16px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:10;min-height:56px}
+.topbar{background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.12);padding:12px 16px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:10}
 .topbar h1{font-size:16px;font-weight:600;color:#111;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .back{font-size:22px;color:#666;background:none;border:none;cursor:pointer;padding:0 4px;line-height:1}
 .content{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px;padding-bottom:24px}
@@ -93,10 +93,10 @@ align-self:flex-end;
 padding-bottom:4px;
 }
 /* Topbar variant */
-.slt-logo-sm .slt-big{font-size:42px}
-.slt-logo-sm .slt-big::before{left:-7px}
-.slt-logo-sm .slt-big::after{left:-13px}
-.slt-logo-sm .slt-small{font-size:22px;padding-bottom:2px}
+.slt-logo-sm .slt-big{font-size:30px}
+.slt-logo-sm .slt-big::before{left:-5px}
+.slt-logo-sm .slt-big::after{left:-9px}
+.slt-logo-sm .slt-small{font-size:16px;padding-bottom:2px}
 
 /* Spinner/Loading */
 .spinner{width:22px;height:22px;border:2px solid #ddd;border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
@@ -444,7 +444,7 @@ async function createSession(){
     trainer:$('cfg-trainer').value.trim()||_email,
     date:$('cfg-date').value||new Date().toISOString().slice(0,10),
     nPal,nTra,
-    palistas:palNames.map(name=>({name,tramos:Array.from({length:nTra},()=>({currentManga:0,mangas:[]}))}))
+    palistas:palNames.map(name=>({name,tramos:Array.from({length:nTra},()=>({mangas:[],pens:[]}))}))
   };
 
   showLoad('Creando sesión...');
@@ -559,8 +559,7 @@ function onRemoteTime(row){
   const mi=row.manga_idx, ti=row.tramo_idx;
   const tra=pal.tramos[ti];
   tra.mangas[mi]=row.time_value;
-  if(row.penalty){ tra.pens=tra.pens||{}; tra.pens[mi]=(tra.pens[mi]||0)+row.penalty; }
-  if(mi>=tra.currentManga) tra.currentManga=mi+1;
+  if(row.penalty) tra.pens[mi]=(tra.pens[mi]||0)+row.penalty;
 
   // Añadir al feed como entrada remota
   _feed.unshift({pi:row.palista_idx,mi,ti,t:row.time_value,pen:row.penalty,pal:pal.name,remote:true,who:row.trainer_email?.split('@')[0]||'?',dbId:row.id});
@@ -575,14 +574,16 @@ async function refreshFromDB(){
   try{
     const rows=await api('/rest/v1/live_times?session_id=eq.'+_sessId+'&order=created_at.asc');
     // Reconstruir estado desde DB
-    const palistas=_sessData.palistas.map(p=>({...p,tramos:Array.from({length:_sessData.nTra},()=>({currentManga:0,mangas:[],pens:{}}))}));
+    const palistas=_sessData.palistas.map(p=>({
+      ...p,
+      tramos:Array.from({length:_sessData.nTra},()=>({mangas:[],pens:[]}))
+    }));
     rows.forEach(r=>{
       const pal=palistas[r.palista_idx]; if(!pal) return;
       const mi=r.manga_idx, ti=r.tramo_idx;
       const tra=pal.tramos[ti];
       tra.mangas[mi]=r.time_value;
-      if(r.penalty){ tra.pens[mi]=(tra.pens[mi]||0)+r.penalty; }
-      if(mi>=tra.currentManga) tra.currentManga=mi+1;
+      if(r.penalty) tra.pens[mi]=(tra.pens[mi]||0)+r.penalty;
     });
     _sessData.palistas=palistas;
     renderFeed();rebuildSelectors();
@@ -604,12 +605,20 @@ function rebuildSelectors(){
 }
 
 function rebuildMangaSelector(){
-  const pal=_sessData.palistas[getPi()];
-  const tra=pal.tramos[getTi()];
-  const n=tra.currentManga+1; let html='';
-  for(let i=0;i<n;i++) html+=`<option value="${i}">${i<tra.mangas.length?`Manga ${i+1} ✓`:`Manga ${i+1} (nueva)`}</option>`;
+  const tra=_sessData.palistas[getPi()].tramos[getTi()];
+  const nRegistradas=tra.mangas.length;
+  // Mostrar mangas ya registradas + la siguiente libre
+  const n=nRegistradas+1;
+  let html='';
+  for(let i=0;i<n;i++){
+    const registrada=tra.mangas[i]!==undefined&&tra.mangas[i]!==null;
+    html+=`<option value="${i}">Manga ${i+1}${registrada?' ✓':' (nueva)'}</option>`;
+  }
   $('sel-man').innerHTML=html;
-  $('sel-man').value=tra.currentManga;
+  // Saltar a la primera manga sin registrar
+  let primerLibre=tra.mangas.findIndex(m=>m===null||m===undefined);
+  if(primerLibre===-1) primerLibre=tra.mangas.length;
+  $('sel-man').value=Math.min(primerLibre, n-1);
 }
 
 const getPi=()=>parseInt($('sel-pal').value);
@@ -623,7 +632,8 @@ function onTraChange(){resetChrono();rebuildMangaSelector();updateCtxInfo();upda
 function willOW(){
   const tra=_sessData.palistas[getPi()].tramos[getTi()];
   const mi=getMi();
-  return !!(tra.mangas[mi]!==undefined&&tra.mangas[mi]!==null);
+  const val=tra.mangas[mi];
+  return val!==null&&val!==undefined;
 }
 
 function updateBtn(){
@@ -636,9 +646,13 @@ function updateBtn(){
 function updateCtxInfo(){
   const pal=_sessData.palistas[getPi()];
   const mi=getMi(),ti=getTi();
-  const tra=pal.tramos[ti];
-  const ex=tra.mangas[mi];
-  const exS=(ex!==undefined&&ex!==null)?(ex==='DNF'?' · Anterior: <strong style="color:#6A1B9A">DNF</strong>':` · Anterior: <strong>${typeof ex==='number'?ex.toFixed(2)+'s':ex}</strong>`): '';
+  const val=pal.tramos[ti].mangas[mi];
+  let exS='';
+  if(val!==null&&val!==undefined){
+    exS=val==='DNF'
+      ?' · Anterior: <strong style="color:#6A1B9A">DNF</strong>'
+      :` · Anterior: <strong>${val.toFixed(2)}s</strong>`;
+  }
   $('ctx-info').innerHTML=`<strong>${pal.name}</strong> · Tramo ${ti+1} · Manga ${mi+1}${exS}`;
 }
 
@@ -701,28 +715,24 @@ function markDNF(){
   const pi=getPi(), mi=getMi(), ti=getTi();
   const pal=_sessData.palistas[pi];
   const tra=pal.tramos[ti];
+  const overwrite=tra.mangas[mi]!==null&&tra.mangas[mi]!==undefined;
   tra.mangas[mi]='DNF';
-  if(mi>=tra.currentManga) tra.currentManga=mi+1;
-  _feed.unshift({pi,mi,ti,t:'DNF',pen:0,pal:pal.name,overwrite:false,remote:false,who:'Tu',dbId:null,isDNF:true});
+  _feed.unshift({pi,mi,ti,t:'DNF',pen:0,pal:pal.name,overwrite,remote:false,who:'Tú',dbId:null,isDNF:true});
   if(_feed.length>30) _feed.pop();
   rebuildMangaSelector();
-  $('sel-man').value=tra.currentManga;
   onManChange();
   renderFeed();
   updateCtxInfo();
-  toast('DNF · '+pal.name+' · T'+(ti+1)+' · M'+(mi+1));
+  toast(`🚫 DNF · ${pal.name} · T${ti+1} · M${mi+1}`);
 }
 
 async function recordTime(t,pen){
   const pi=getPi(),mi=getMi(),ti=getTi();
   const pal=_sessData.palistas[pi];
   const tra=pal.tramos[ti];
-  const isNew=mi>=tra.mangas.length;
-  // Guardar el tiempo directamente (con penalización incluida)
+  const overwrite=tra.mangas[mi]!==null&&tra.mangas[mi]!==undefined;
   tra.mangas[mi]=t;
-  // Guardar penalización por separado en el tramo
-  if(pen){ tra.pens=tra.pens||{}; tra.pens[mi]=(tra.pens[mi]||0)+pen; }
-  if(mi>=tra.currentManga) tra.currentManga=mi+1;
+  if(pen){ tra.pens[mi]=(tra.pens[mi]||0)+pen; }
 
   let dbId=null;
   if(_isCollab&&_sessId){
@@ -736,20 +746,19 @@ async function recordTime(t,pen){
     }catch(e){toast('Sin conexión, tiempo guardado localmente',true);}
   }
 
-  _feed.unshift({pi,mi,ti,t,pen,pal:pal.name,overwrite:!isNew,remote:false,who:'Tú',dbId});
+  _feed.unshift({pi,mi,ti,t,pen,pal:pal.name,overwrite,remote:false,who:'Tú',dbId});
   if(_feed.length>30) _feed.pop();
-  rebuildMangaSelector();$('sel-man').value=tra.currentManga;onManChange();
+  rebuildMangaSelector();
+  onManChange();
   renderFeed();updateCtxInfo();
   toast(`${pal.name} · T${ti+1} · M${mi+1} → ${t.toFixed(2)}s`);
 }
 
 async function deleteEntry(idx){
   const e=_feed[idx];
-  const pal=_sessData.palistas[e.pi];
-  const tra=pal.tramos[e.ti];
+  const tra=_sessData.palistas[e.pi].tramos[e.ti];
   tra.mangas[e.mi]=null;
-  if(e.pen&&tra.pens&&tra.pens[e.mi]) tra.pens[e.mi]=Math.max(0,tra.pens[e.mi]-e.pen);
-  if(e.mi===tra.currentManga-1) tra.currentManga=Math.max(0,tra.currentManga-1);
+  if(e.pen) tra.pens[e.mi]=Math.max(0,(tra.pens[e.mi]||0)-e.pen);
 
   if(_isCollab&&e.dbId&&!e.remote){
     try{await api('/rest/v1/live_times?id=eq.'+e.dbId,{method:'DELETE'});}catch{}
@@ -770,7 +779,7 @@ function renderFeed(){
           ${e.overwrite&&!e.remote?'<span style="font-size:10px;background:#FAEEDA;color:#633806;padding:2px 6px;border-radius:100px;font-weight:600">sobreescrito</span>':''}
         </div>
         <div style="font-size:12px;color:#888;margin-top:3px">
-          Tramo ${e.ti+1} · Manga ${e.mi+1}${e.pen?` · <span style="color:#993C1D">+${e.pen}s pen</span>`:''}
+          Manga ${e.mi+1} · Tramo ${e.ti+1}${e.pen?` · <span style="color:#993C1D">+${e.pen}s pen</span>`:''}
         </div>
       </div>
       <div style="font-size:20px;font-weight:600;min-width:60px;text-align:right;color:${e.isDNF?'#6A1B9A':'#111'}">${e.isDNF?'DNF':e.t.toFixed(2)+'s'}</div>
@@ -783,90 +792,59 @@ function renderResumen(){
   const sess=_sessData;
   const cont=$('tab-1');
   cont.innerHTML='';
-
   if(!sess) return;
 
-  sess.palistas.forEach((pal,pi)=>{
-    const palCard=document.createElement('div');
-    palCard.className='card';
-    palCard.style.marginBottom='10px';
+  sess.palistas.forEach(pal=>{
+    // Calcular el máximo de mangas registradas en cualquier tramo
+    const maxMangas=Math.max(...pal.tramos.map(tra=>tra.mangas.filter(m=>m!==null&&m!==undefined).length),0);
 
-    // Comprobar si hay algún tiempo registrado
-    const hayTiempos=pal.tramos.some(tra=>tra.mangas.some(m=>m!==null&&m!==undefined));
+    const card=document.createElement('div');
+    card.className='card';
+    card.style.marginBottom='10px';
 
-    if(!hayTiempos){
-      palCard.innerHTML=`<div class="rpt">${pal.name}</div><div class="empty" style="padding:8px 0">Sin tiempos registrados</div>`;
-      cont.appendChild(palCard);
+    if(maxMangas===0){
+      card.innerHTML=`<div class="rpt">${pal.name}</div><div class="empty" style="padding:8px 0">Sin tiempos</div>`;
+      cont.appendChild(card);
       return;
     }
 
-    let html=`<div class="rpt">${pal.name}</div>`;
-
-    // Para cada tramo, mostrar sus mangas
-    pal.tramos.forEach((tra,ti)=>{
-      const mangasConTiempo=tra.mangas.filter(m=>m!==null&&m!==undefined);
-      if(!mangasConTiempo.length) return;
-
-      html+=`<div class="rmb">`;
-      html+=`<div class="rml">Tramo ${ti+1}</div>`;
-
-      // Encontrar mejor tiempo del tramo
-      const tiemposValidos=tra.mangas
-        .map((m,mi)=>({val:m,mi,pen:tra.pens?.[mi]||0}))
-        .filter(({val})=>val!==null&&val!==undefined&&val!=='DNF'&&typeof val==='number');
-      const mejorTiempo=tiemposValidos.length?tiemposValidos.reduce((a,b)=>a.val<b.val?a:b):null;
-
-      tra.mangas.forEach((m,mi)=>{
-        if(m===null||m===undefined) return;
-        const pen=tra.pens?.[mi]||0;
-        const esMejor=mejorTiempo&&mi===mejorTiempo.mi&&m!=='DNF';
-        const isDNF=m==='DNF';
-        const tDisplay=isDNF
-          ?`<span style="color:#6A1B9A;font-weight:700">DNF</span>`
-          :`<span class="rtv${esMejor?' best':''}">${m.toFixed(2)}s${esMejor?' ★':''}${pen>0?`<span style="font-size:11px;color:#993C1D;font-weight:400"> +${pen.toFixed(2)}s</span>`:''}</span>`;
-
-        html+=`<div class="rtr">
-          <span class="rtn">Manga ${mi+1}</span>
-          ${tDisplay}
-        </div>`;
-      });
-
-      // Mejor tiempo del tramo + penalización
-      if(mejorTiempo){
-        const totalMejor=mejorTiempo.val+(mejorTiempo.pen||0);
-        html+=`<div class="rto" style="margin-top:4px">
-          <span>Mejor manga T${ti+1}</span>
-          <span>${totalMejor.toFixed(2)}s</span>
-        </div>`;
-      }
-
-      html+=`</div>`; // rmb
-    });
-
-    // Total teórico: suma de mejores mangas de cada tramo
-    const mejoresPorTramo=pal.tramos.map((tra,ti)=>{
-      const validos=tra.mangas
-        .map((m,mi)=>({val:m,pen:tra.pens?.[mi]||0}))
-        .filter(({val})=>val!==null&&val!==undefined&&val!=='DNF'&&typeof val==='number');
-      if(!validos.length) return null;
-      const mejor=validos.reduce((a,b)=>a.val<b.val?a:b);
-      return {ti,val:mejor.val,pen:mejor.pen};
-    });
-
-    const todosLosTramosConTiempo=mejoresPorTramo.filter(m=>m!==null);
-    if(todosLosTramosConTiempo.length>1){
-      const totalTeorico=todosLosTramosConTiempo.reduce((a,m)=>a+m.val+m.pen,0);
-      html+=`<div class="divider"></div>`;
-      html+=`<div class="tbox teo"><div class="tl">Total teórico (mejores mangas)</div><div class="tv">${totalTeorico.toFixed(2)}s</div></div>`;
+    // Cabecera: "Manga 1 | Manga 2 | ..."
+    const nCols=Math.max(...pal.tramos.map(tra=>tra.mangas.length),1);
+    let thead='<th style="text-align:left;padding:6px 8px;font-size:12px;color:#888;font-weight:600">Tramo</th>';
+    for(let mi=0;mi<nCols;mi++){
+      thead+=`<th style="text-align:center;padding:6px 8px;font-size:12px;color:#888;font-weight:600">M${mi+1}</th>`;
     }
 
-    palCard.innerHTML=html;
-    cont.appendChild(palCard);
-  });
+    // Filas por tramo
+    let tbody='';
+    pal.tramos.forEach((tra,ti)=>{
+      const hayAlgo=tra.mangas.some(m=>m!==null&&m!==undefined);
+      if(!hayAlgo) return;
+      let fila=`<td style="padding:6px 8px;font-size:13px;font-weight:600;color:#555;white-space:nowrap">T${ti+1}</td>`;
+      for(let mi=0;mi<nCols;mi++){
+        const val=tra.mangas[mi];
+        const pen=tra.pens?.[mi]||0;
+        let celda='—';
+        if(val==='DNF') celda='<span style="color:#6A1B9A;font-weight:700">DNF</span>';
+        else if(typeof val==='number'){
+          celda=val.toFixed(2)+'s';
+          if(pen>0) celda+=`<br><span style="font-size:11px;color:#993C1D">+${pen.toFixed(2)}s</span>`;
+        }
+        fila+=`<td style="text-align:center;padding:6px 8px;font-size:14px;color:#111">${celda}</td>`;
+      }
+      tbody+=`<tr style="border-bottom:0.5px solid #f0f0f0">${fila}</tr>`;
+    });
 
-  if(!cont.children.length){
-    cont.innerHTML='<div class="empty">Sin tiempos registrados aún</div>';
-  }
+    card.innerHTML=`
+      <div class="rpt">${pal.name}</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="border-bottom:1px solid #eee">${thead}</tr></thead>
+          <tbody>${tbody}</tbody>
+        </table>
+      </div>`;
+    cont.appendChild(card);
+  });
 }
 
 // ── Finalizar ─────────────────────────────────────────────────────────────────
