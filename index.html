@@ -139,6 +139,8 @@ padding-bottom:4px;
 .pen-btn.s2{border-color:#C0DD97;background:#EAF3DE;color:#3B6D11}
 .pen-btn.s50{border-color:#9FE1CB;background:#E1F5EE;color:#085041}
 .psl{font-size:11px;color:#aaa;text-align:center;margin-bottom:4px}
+.dnf-btn{width:100%;height:44px;border-radius:8px;border:1px solid #7B1FA2;background:#F3E5F5;color:#6A1B9A;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;letter-spacing:1px;margin-top:10px}
+.dnf-btn:active{transform:scale(.96)}
 /* Resumen */
 .rpt{font-size:16px;font-weight:600;color:#111;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid #eee}
 .rmb{margin-bottom:14px}
@@ -333,6 +335,7 @@ padding-bottom:4px;
       <button class="pen-btn s2"  onclick="addPC(-2)">－2s toque</button>
       <button class="pen-btn s50" onclick="addPC(-50)">－50s rehús</button>
     </div>
+    <button class="dnf-btn" onclick="markDNF()">🚫 DNF — No Finalizada</button>
   </div>
 </div>
 
@@ -755,6 +758,24 @@ function saveManual(){
   $('m-input').value='';_manPen=0;$('m-pen').textContent='';
 }
 
+function markDNF(){
+  if(_chrono.running) stopChrono();
+  resetChrono();
+  const pi=getPi(), mi=getMi(), ti=getTi();
+  const pal=_sessData.palistas[pi];
+  if(!pal.mangas[mi]) pal.mangas[mi]={times:Array(_sessData.nTra).fill(null),pen:0};
+  pal.mangas[mi].times[ti]='DNF';
+  if(mi>=pal.currentManga) pal.currentManga=mi+1;
+  _feed.unshift({pi,mi,ti,t:'DNF',pen:0,pal:pal.name,overwrite:false,remote:false,who:'Tu',dbId:null,isDNF:true});
+  if(_feed.length>30) _feed.pop();
+  rebuildMangaSelector();
+  $('sel-man').value=pal.currentManga;
+  onManChange();
+  renderFeed();
+  updateCtxInfo();
+  toast('DNF · '+pal.name+' · M'+(mi+1)+' · T'+(ti+1));
+}
+
 async function recordTime(t,pen){
   const pi=getPi(),mi=getMi(),ti=getTi();
   const pal=_sessData.palistas[pi];
@@ -815,7 +836,7 @@ function renderFeed(){
           Manga ${e.mi+1} · Tramo ${e.ti+1}${e.pen?` · <span style="color:#993C1D">+${e.pen}s pen</span>`:''}
         </div>
       </div>
-      <div style="font-size:20px;font-weight:600;min-width:60px;text-align:right;color:#111">${e.t.toFixed(2)}s</div>
+      <div style="font-size:20px;font-weight:600;min-width:60px;text-align:right;color:${e.isDNF?'#6A1B9A':'#111'}">${e.isDNF?'DNF':e.t.toFixed(2)+'s'}</div>
       ${!e.remote?`<button class="feed-del" onclick="deleteEntry(${i})">&#10005;</button>`:'<div style="width:28px"></div>'}
     </div>`).join('');
 }
